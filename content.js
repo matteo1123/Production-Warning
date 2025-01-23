@@ -391,7 +391,12 @@ document.body.appendChild(hoverBox);
     });
 
     // Update hover behavior
+    let leaveTimeout;
+    
     focusBar.addEventListener('mouseenter', function() {
+        if (leaveTimeout) {
+            clearTimeout(leaveTimeout);
+        }
         focusBar.style.padding = '8px 0';
         focusLabel.style.opacity = '1';
         focusLabel.style.height = 'auto';
@@ -404,17 +409,31 @@ document.body.appendChild(hoverBox);
         document.body.style.paddingTop = focusBar.offsetHeight + 'px';
     });
 
-    focusBar.addEventListener('mouseleave', function() {
-        focusBar.style.padding = '4px 0';
-        focusLabel.style.opacity = '0';
-        focusLabel.style.height = '0';
-        mainFocus.style.fontSize = '14px';
-        linksContainer.style.opacity = '0';
-        linksContainer.style.height = '0';
-        linksContainer.style.marginTop = '0';
-        logoContainer.style.opacity = '0';
-        logoContainer.style.height = '0';
-        document.body.style.paddingTop = focusBar.offsetHeight + 'px';
+    focusBar.addEventListener('mouseleave', function(e) {
+        // Check if we're moving to a child element
+        const relatedTarget = e.relatedTarget;
+        if (focusBar.contains(relatedTarget)) {
+            return;
+        }
+
+        // Add delay before hiding
+        leaveTimeout = setTimeout(() => {
+            // Check if mouse has returned to the focus bar
+            if (focusBar.matches(':hover') || linksContainer.matches(':hover')) {
+                return;
+            }
+            
+            focusBar.style.padding = '4px 0';
+            focusLabel.style.opacity = '0';
+            focusLabel.style.height = '0';
+            mainFocus.style.fontSize = '14px';
+            linksContainer.style.opacity = '0';
+            linksContainer.style.height = '0';
+            linksContainer.style.marginTop = '0';
+            logoContainer.style.opacity = '0';
+            logoContainer.style.height = '0';
+            document.body.style.paddingTop = focusBar.offsetHeight + 'px';
+        }, 200); // 200ms delay
     });
 
     // Function to update notes display
