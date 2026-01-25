@@ -185,7 +185,9 @@ export default function FocusDetailPage() {
                         <div className="text-center">
                             <p className="text-zinc-400 mb-3">Install the extension to import this focus</p>
                             <a
-                                href="#"
+                                href="https://chromewebstore.google.com/detail/production-warning/gijcnlfiljejcgbcjnkpnbefjngcgapd"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-semibold rounded-lg transition-all"
                             >
                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
