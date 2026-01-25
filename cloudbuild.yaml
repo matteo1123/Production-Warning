@@ -1,6 +1,7 @@
 steps:
   # Build the Docker image
   - name: 'gcr.io/cloud-builders/docker'
+    dir: 'focus-share-web'
     args:
       - 'build'
       - '-t'
@@ -9,7 +10,7 @@ steps:
       - 'gcr.io/$PROJECT_ID/focus-share:latest'
       - '--build-arg'
       - 'NEXT_PUBLIC_CONVEX_URL=${_CONVEX_URL}'
-      - './focus-share-web'
+      - '.'
 
   # Push the image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
@@ -47,7 +48,7 @@ images:
 # Substitution variables (set these in Cloud Build trigger)
 substitutions:
   _REGION: 'us-central1'
-  _CONVEX_URL: 'https://your-convex-deployment.convex.cloud'
+  _CONVEX_URL: 'https://strong-ferret-346.convex.cloud'
 
 # Build timeout
 timeout: '1200s'
