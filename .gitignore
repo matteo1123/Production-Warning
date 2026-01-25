@@ -7,6 +7,8 @@ yarn.lock
 dist/
 build/
 *.zip
+.next/
+out/
 
 # IDE and Editor files
 .idea/
@@ -24,4 +26,12 @@ yarn-error.log*
 
 # Chrome Extension specific
 *.pem
-*.crx 
+*.crx
+
+# Environment files
+.env
+.env.local
+.env*.local
+
+# Convex
+.convex/

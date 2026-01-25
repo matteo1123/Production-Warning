@@ -1,69 +1,54 @@
-# Production Warning Extension
+# Production Warning - Focus Mode Extension
 
-A Chrome extension that helps prevent accidental actions in production environments while maintaining focus on current tasks.
+A Chrome extension that helps you stay focused by displaying a customizable focus bar with quick links, and warns you when navigating production environments.
 
-## Features
+## Project Structure
 
-### Production Warning
-- Visual warnings when hovering over interactive elements in production environments
-- Configurable for multiple production URLs
-- Works with dynamically loaded content
-- Supports iframes
+```
+├── extension/           # Chrome extension
+│   ├── manifest.json
+│   ├── content.js
+│   ├── background.js
+│   ├── focus.js
+│   └── ...
+│
+├── focus-share-web/     # Focus sharing website (Next.js)
+│   ├── src/app/
+│   ├── convex/
+│   ├── Dockerfile
+│   └── ...
+│
+└── cloudbuild.yaml      # Cloud Build config for website deployment
+```
 
-### Focus Mode
-- Persistent focus bar showing current task
-- Quick access to relevant links
-- Multiple focus topics support
-- Click to open all related links
-- Context-specific notes
+## Extension Features
 
-## Installation
+- **Focus Bar**: Always-visible bar showing your current focus with quick links
+- **Production Warning**: Visual warning when hovering over elements on production sites
+- **Context Notes**: Add notes to specific pages
+- **Share Focuses**: Share your focus sessions with others
 
-### From Chrome Web Store
-1. Visit the Chrome Web Store (link coming soon)
-2. Click "Add to Chrome"
-3. Confirm the installation
+## Development
 
-### From Source
-1. Clone this repository
-2. Open Chrome and go to `chrome://extensions/`
-3. Enable "Developer mode"
-4. Click "Load unpacked"
-5. Select the extension directory
+### Extension
+1. Go to `chrome://extensions/`
+2. Enable "Developer mode"
+3. Click "Load unpacked" and select the `extension/` folder
 
-## Usage
+### Website
+```bash
+cd focus-share-web
+npm install
+npx convex dev  # Start Convex backend
+npm run dev     # Start Next.js dev server
+```
 
-### Setting Up Production Warnings
-1. Click the extension icon
-2. Enter your production URLs (e.g., "production.example.com")
-3. Save settings
-4. Hover over links in production to see warnings
+## Deployment
 
-### Using Focus Mode
-1. Open Focus Mode Settings from the extension popup
-2. Enable Focus Mode
-3. Create focus topics with relevant links
-4. Use the context notes feature for additional information (store a note for a given url)
-5. Click the focus text to open all related links
+The website auto-deploys to Google Cloud Run when changes are pushed to `focus-share-web/`.
 
-## Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
-
-## Privacy
-
-This extension:
-- Does not collect any user data
-- Does not transmit any information
-- Stores settings only in your browser's local storage
-- Requires minimal permissions
-
-## Support
-
-- Open an issue for bug reports or feature requests
-- Check existing issues before creating new ones
-- Include relevant details and screenshots when reporting issues
+Configure the Cloud Build trigger with:
+- **Included files filter**: `focus-share-web/**`
+- **Substitution variables**:
+  - `_CONVEX_URL`: Your Convex deployment URL
+  - `_REGION`: Cloud Run region (default: us-central1)

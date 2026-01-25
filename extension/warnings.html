@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="styles/focus.css">
+    <style>
+        body {
+            width: 500px;
+            min-height: 400px;
+            padding: 15px;
+        }
+
+        .rules-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+
+        .rule-item {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 8px 0;
+            position: relative;
+        }
+
+        .rule-item.editing {
+            border-color: #ffd700;
+        }
+
+        .rule-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .rule-pattern {
+            font-family: monospace;
+            color: #ffd700;
+            font-size: 13px;
+        }
+
+        .rule-details {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #888;
+        }
+
+        .rule-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .rule-controls button {
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        .emblem-picker {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .emblem-option {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #444;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 20px;
+            background: #2a2a2a;
+            transition: all 0.2s;
+        }
+
+        .emblem-option:hover {
+            border-color: #888;
+        }
+
+        .emblem-option.selected {
+            border-color: #ffd700;
+            background: #3a3a3a;
+        }
+
+        .form-group {
+            margin: 12px 0;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ccc;
+            font-size: 12px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 8px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            color: #fff;
+        }
+
+        .add-form {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .add-form h4 {
+            margin: 0 0 15px 0;
+            color: #ffd700;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .button-row button {
+            flex: 1;
+        }
+
+        .btn-secondary {
+            background: #444 !important;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: #ffd700;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <img src="icons/icon32.png" alt="Logo">
+        <h3>Warning Rules</h3>
+    </div>
+
+    <p style="color: #888; font-size: 12px;">
+        Configure which sites trigger visual warnings when hovering over elements.
+    </p>
+
+    <div class="rules-list" id="rulesList">
+        <div class="empty-state">No warning rules configured</div>
+    </div>
+
+    <div class="add-form" id="addForm">
+        <h4 id="formTitle">Add New Rule</h4>
+
+        <div class="form-group">
+            <label for="urlPattern">URL Pattern (use * for wildcard)</label>
+            <input type="text" id="urlPattern" placeholder="*.production.example.com/*">
+        </div>
+
+        <div class="form-group">
+            <label for="elementSelector">Element Selector</label>
+            <select id="elementSelector">
+                <option value="*">All elements (*)</option>
+                <option value="a">Links (a)</option>
+                <option value="button">Buttons (button)</option>
+                <option value="li">List items (li)</option>
+                <option value="input,button,a">Interactive elements</option>
+                <option value="custom">Custom selector...</option>
+            </select>
+            <input type="text" id="customSelector" placeholder=".my-class, #my-id"
+                style="display:none; margin-top: 8px;">
+        </div>
+
+        <div class="form-group">
+            <label>Emblem</label>
+            <div class="emblem-picker" id="emblemPicker">
+                <div class="emblem-option selected" data-emblem="production" title="Production Warning">⚠️</div>
+                <div class="emblem-option" data-emblem="star" title="Star">⭐</div>
+                <div class="emblem-option" data-emblem="heart" title="Heart">❤️</div>
+                <div class="emblem-option" data-emblem="fire" title="Fire">🔥</div>
+                <div class="emblem-option" data-emblem="warning" title="Lightning">⚡</div>
+                <div class="emblem-option" data-emblem="skull" title="Skull">💀</div>
+                <div class="emblem-option" data-emblem="stop" title="Stop">🛑</div>
+                <div class="emblem-option" data-emblem="eyes" title="Eyes">👀</div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="ruleLabel">Custom Label (optional)</label>
+            <input type="text" id="ruleLabel" placeholder="Production Environment">
+        </div>
+
+        <div class="button-row">
+            <button id="cancelBtn" class="btn-secondary" style="display:none;">Cancel</button>
+            <button id="saveRuleBtn">Add Rule</button>
+        </div>
+    </div>
+
+    <a href="popup.html" class="back-link">← Back to Settings</a>
+
+    <script src="warnings.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,53 @@
+steps:
+  # Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/focus-share:$COMMIT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/focus-share:latest'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_CONVEX_URL=${_CONVEX_URL}'
+      - './focus-share-web'
+
+  # Push the image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/focus-share:$COMMIT_SHA'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/focus-share:latest'
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'focus-share'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/focus-share:$COMMIT_SHA'
+      - '--region'
+      - '${_REGION}'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'NEXT_PUBLIC_CONVEX_URL=${_CONVEX_URL}'
+
+# Store images in Container Registry
+images:
+  - 'gcr.io/$PROJECT_ID/focus-share:$COMMIT_SHA'
+  - 'gcr.io/$PROJECT_ID/focus-share:latest'
+
+# Substitution variables (set these in Cloud Build trigger)
+substitutions:
+  _REGION: 'us-central1'
+  _CONVEX_URL: 'https://your-convex-deployment.convex.cloud'
+
+# Build timeout
+timeout: '1200s'
