@@ -1034,8 +1034,59 @@ if (window === window.top) {
 
     mainFocus.addEventListener('click', function () {
         chrome.storage.sync.get(['focusMode'], function (result) {
-            if (result.focusMode && result.focusMode.links) {
-                result.focusMode.links.forEach(({ value }) => {
+            if (!result.focusMode || !result.focusMode.enabled) return;
+
+            const activeFocus = result.focusMode.focuses.find(f => f.active);
+            if (!activeFocus) return;
+
+            // check per-link warnings first (specific overrides)
+            let linkWarning = null;
+            if (activeFocus.links) {
+                for (const link of activeFocus.links) {
+                    if (link.warning && link.warning.enabled) {
+                        // Check if current URL matches this link
+                        try {
+                            // Simple match: if current URL starts with link URL or contains it
+                            // For better matching, if link has no path chars, treat as domain wildcard
+                            // If link has path, match exact prefix
+                            const currentUrl = window.location.href;
+                            const linkUrl = link.value; // URL from user
+
+                            // Clean checks
+                            if (currentUrl.includes(linkUrl)) {
+                                linkWarning = {
+                                    emblem: link.warning.emblem || 'production',
+                                    elementRegex: link.warning.elementRegex || '.*'
+                                };
+                                break;
+                            }
+                        } catch (e) { console.error('Link match error', e); }
+                    }
+                }
+            }
+
+            // Apply warning if found (either per-link or global)
+            if (linkWarning) {
+                applyWarning(linkWarning.emblem, linkWarning.elementRegex, "Link Warning");
+            } else if (activeFocus.warning && activeFocus.warning.enabled) {
+                const urlRegex = new RegExp(activeFocus.warning.urlRegex);
+                if (urlRegex.test(window.location.href)) {
+                    applyWarning(
+                        activeFocus.warning.emblem,
+                        activeFocus.warning.elementRegex,
+                        activeFocus.warning.urlRegex
+                    );
+                }
+            }
+
+            // Check for context notes (logic can go here if needed to show notes on click)
+            if (activeFocus.contextNotes) {
+                // Future: maybe show a notes popup?
+            }
+
+            // Open links
+            if (activeFocus.links) {
+                activeFocus.links.forEach(({ value }) => {
                     // Ensure URL is properly formatted
                     let url = value;
                     if (!url.match(/^https?:\/\//i)) {
@@ -1052,6 +1103,4 @@ if (window === window.top) {
     contextNotesBtn.style.pointerEvents = 'auto';
     linksContainer.style.pointerEvents = 'auto';
     notesPopup.style.pointerEvents = 'auto';
-}
-
 

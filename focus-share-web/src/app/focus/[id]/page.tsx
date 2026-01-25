@@ -43,6 +43,7 @@ export default function FocusDetailPage() {
             const event = new CustomEvent("focus-share-import", {
                 detail: {
                     name: share.name,
+                    description: share.description,
                     links: share.links,
                     warning: share.warning,
                     contextNotes: share.contextNotes,
@@ -108,6 +109,12 @@ export default function FocusDetailPage() {
                     <h1 className="text-3xl md:text-4xl font-bold text-white mt-4 mb-2">
                         {share.name}
                     </h1>
+                    {/* Focus Description */}
+                    {share.description && (
+                        <div className="text-zinc-400 mb-4 whitespace-pre-wrap max-w-2xl bg-zinc-900/50 p-4 rounded-lg border border-zinc-800">
+                            {share.description}
+                        </div>
+                    )}
                     <div className="flex items-center gap-4 text-sm text-zinc-500">
                         <span>{share.links.length} links</span>
                         <span>•</span>
@@ -117,7 +124,55 @@ export default function FocusDetailPage() {
                     </div>
                 </div>
 
-                {/* Warning Section */}
+                {/* Import/Open Button */}
+                <div className="mb-8 p-4 rounded-xl bg-zinc-900/80 border border-zinc-800">
+                    {imported ? (
+                        <div className="flex items-center gap-3 text-green-400">
+                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span className="font-semibold">Imported to your extension!</span>
+                        </div>
+                    ) : hasExtension ? (
+                        <div className="flex gap-4">
+                            <button
+                                onClick={handleImport}
+                                className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-semibold rounded-lg transition-all shadow-lg shadow-amber-500/20"
+                            >
+                                Import to PW Focus Extension
+                            </button>
+                            <button
+                                onClick={() => {
+                                    if (confirm('This will open ' + share.links.length + ' tabs. Continue?')) {
+                                        share.links.forEach((link) => {
+                                            window.open(link.value, '_blank');
+                                        });
+                                    }
+                                }}
+                                className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-lg transition-all border border-zinc-700"
+                            >
+                                Open All
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="text-center">
+                            <p className="text-zinc-400 mb-3">Install the extension to import this focus and enable warnings</p>
+                            <a
+                                href="https://chromewebstore.google.com/detail/production-warning/gijcnlfiljejcgbcjnkpnbefjngcgapd"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-semibold rounded-lg transition-all"
+                            >
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 0C8.21 0 4.831 1.757 2.632 4.501l3.953 6.848A5.454 5.454 0 0112 6.545h10.691A12 12 0 0012 0zM1.931 5.47A11.943 11.943 0 000 12c0 6.012 4.42 10.991 10.189 11.864l3.953-6.847a5.45 5.45 0 01-6.865-2.999L1.931 5.47zm13.382 2.166L12.36 12.96a5.454 5.454 0 016.864 2.998h5.346A11.943 11.943 0 0024 12c0-2.42-.72-4.67-1.95-6.556H15.313z" />
+                                </svg>
+                                Get PW Focus
+                            </a>
+                        </div>
+                    )}
+                </div>
+
+                {/* Global Warning Section */}
                 {share.warning && share.warning.enabled && (
                     <div className="mb-8 p-6 rounded-xl bg-zinc-900/40 border border-yellow-500/20">
                         <div className="flex items-center gap-3 mb-4">
@@ -129,7 +184,7 @@ export default function FocusDetailPage() {
                                     }[share.warning.emblem] || '⚠️'
                                 }
                             </span>
-                            <h2 className="text-xl font-semibold text-yellow-500">Cursor Warning Enabled</h2>
+                            <h2 className="text-xl font-semibold text-yellow-500">Global Cursor Warning</h2>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800">
@@ -165,40 +220,6 @@ export default function FocusDetailPage() {
                     </div>
                 )}
 
-                {/* Import Button */}
-                <div className="mb-8 p-4 rounded-xl bg-zinc-900/80 border border-zinc-800">
-                    {imported ? (
-                        <div className="flex items-center gap-3 text-green-400">
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                            <span className="font-semibold">Imported to your extension!</span>
-                        </div>
-                    ) : hasExtension ? (
-                        <button
-                            onClick={handleImport}
-                            className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-semibold rounded-lg transition-all shadow-lg shadow-amber-500/20"
-                        >
-                            Import to PW Focus Extension
-                        </button>
-                    ) : (
-                        <div className="text-center">
-                            <p className="text-zinc-400 mb-3">Install the extension to import this focus</p>
-                            <a
-                                href="https://chromewebstore.google.com/detail/production-warning/gijcnlfiljejcgbcjnkpnbefjngcgapd"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-semibold rounded-lg transition-all"
-                            >
-                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 0C8.21 0 4.831 1.757 2.632 4.501l3.953 6.848A5.454 5.454 0 0112 6.545h10.691A12 12 0 0012 0zM1.931 5.47A11.943 11.943 0 000 12c0 6.012 4.42 10.991 10.189 11.864l3.953-6.847a5.45 5.45 0 01-6.865-2.999L1.931 5.47zm13.382 2.166L12.36 12.96a5.454 5.454 0 016.864 2.998h5.346A11.943 11.943 0 0024 12c0-2.42-.72-4.67-1.95-6.556H15.313z" />
-                                </svg>
-                                Get PW Focus
-                            </a>
-                        </div>
-                    )}
-                </div>
-
                 {/* Links List */}
                 <div className="space-y-3">
                     <h2 className="text-lg font-semibold text-amber-400 mb-4">Links in this focus</h2>
@@ -208,16 +229,32 @@ export default function FocusDetailPage() {
                             href={link.value}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 hover:border-amber-500/50 transition-all group"
+                            className="block p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 hover:order-[0] hover:border-amber-500/50 transition-all group"
                         >
                             <div className="flex items-center justify-between">
                                 <div className="flex-1 min-w-0">
                                     <h3 className="font-semibold text-white group-hover:text-amber-400 transition-colors truncate">
                                         {link.key}
                                     </h3>
-                                    <p className="text-sm text-zinc-500 truncate mt-1">
-                                        {link.value}
-                                    </p>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <p className="text-sm text-zinc-500 truncate flex-1">
+                                            {link.value}
+                                        </p>
+                                        {link.warning && link.warning.enabled && (
+                                            <span
+                                                className="text-xs bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded border border-yellow-500/20 flex items-center gap-1"
+                                                title={`Warning enabled: ${link.warning.elementRegex || 'All Elements'}`}
+                                            >
+                                                {
+                                                    {
+                                                        production: '⚠️', star: '⭐', heart: '❤️', fire: '🔥',
+                                                        warning: '⚡', skull: '💀', stop: '🛑', eyes: '👀'
+                                                    }[link.warning.emblem] || '⚠️'
+                                                }
+                                                Cursor Warning
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                                 <svg
                                     className="w-5 h-5 text-zinc-600 group-hover:text-amber-400 transition-colors ml-4 flex-shrink-0"
@@ -244,6 +281,7 @@ export default function FocusDetailPage() {
                     dangerouslySetInnerHTML={{
                         __html: JSON.stringify({
                             name: share.name,
+                            description: share.description,
                             links: share.links,
                             warning: share.warning,
                             contextNotes: share.contextNotes,

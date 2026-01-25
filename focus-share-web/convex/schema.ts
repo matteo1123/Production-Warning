@@ -4,13 +4,22 @@ import { v } from "convex/values";
 export default defineSchema({
     shared_focuses: defineTable({
         name: v.string(),
+        description: v.optional(v.string()), // New: Focus description
         links: v.array(
             v.object({
                 key: v.string(),
                 value: v.string(),
+                // New: Per-link warning configuration
+                warning: v.optional(
+                    v.object({
+                        enabled: v.boolean(),
+                        emblem: v.string(),
+                        elementRegex: v.string(),
+                    })
+                ),
             })
         ),
-        // Warning configuration (optional)
+        // Global Warning configuration (optional)
         warning: v.optional(
             v.object({
                 enabled: v.boolean(),

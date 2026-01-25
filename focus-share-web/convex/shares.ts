@@ -5,10 +5,18 @@ import { mutation, query } from "./_generated/server";
 export const createShare = mutation({
     args: {
         name: v.string(),
+        description: v.optional(v.string()),
         links: v.array(
             v.object({
                 key: v.string(),
                 value: v.string(),
+                warning: v.optional(
+                    v.object({
+                        enabled: v.boolean(),
+                        emblem: v.string(),
+                        elementRegex: v.string(),
+                    })
+                ),
             })
         ),
         warning: v.optional(
@@ -32,6 +40,7 @@ export const createShare = mutation({
     handler: async (ctx, args) => {
         const id = await ctx.db.insert("shared_focuses", {
             name: args.name,
+            description: args.description,
             links: args.links,
             warning: args.warning,
             contextNotes: args.contextNotes,

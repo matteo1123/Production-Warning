@@ -100,9 +100,76 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         // Assemble the link pair
-        pair.appendChild(keyInput);
-        pair.appendChild(valueInput);
-        pair.appendChild(removeBtn);
+        const pairContainer = document.createElement('div');
+        pairContainer.style.display = 'flex';
+        pairContainer.style.gap = '8px';
+        pairContainer.style.width = '100%';
+        pairContainer.appendChild(keyInput);
+        pairContainer.appendChild(valueInput);
+        pairContainer.appendChild(removeBtn);
+
+        // Warning controls for this link
+        const warningContainer = document.createElement('div');
+        warningContainer.className = 'link-warning-controls';
+        warningContainer.style.cssText = 'margin-top: 4px; padding: 8px; background: #252525; border-radius: 4px; display: none;';
+
+        // Toggle for link warning
+        const warningToggle = document.createElement('div');
+        warningToggle.style.cssText = 'font-size: 11px; color: #888; cursor: pointer; display: flex; align-items: center; gap: 4px; margin-top: 2px;';
+        warningToggle.innerHTML = '<span class="warning-icon">⚠️</span> Configure Warning';
+        warningToggle.onclick = () => {
+            const isHidden = warningContainer.style.display === 'none';
+            warningContainer.style.display = isHidden ? 'flex' : 'none';
+            warningContainer.style.gap = '8px';
+            warningContainer.style.alignItems = 'center';
+            warningToggle.style.color = isHidden ? '#ffd700' : '#888';
+        };
+
+        // Initialize state based on existing data
+        if (existing.warning && existing.warning.enabled) {
+            warningContainer.style.display = 'flex';
+            warningContainer.style.gap = '8px';
+            warningContainer.style.alignItems = 'center';
+            warningToggle.style.color = '#ffd700';
+        }
+
+        // Emblem selector for link
+        const emblemSelect = document.createElement('select');
+        emblemSelect.className = 'link-warning-emblem';
+        emblemSelect.style.cssText = 'background: #333; color: white; border: 1px solid #444; padding: 4px; border-radius: 4px; font-size: 16px;';
+        const EMBLEMS = [
+            { id: 'production', emoji: '⚠️' },
+            { id: 'star', emoji: '⭐' },
+            { id: 'heart', emoji: '❤️' },
+            { id: 'fire', emoji: '🔥' },
+            { id: 'warning', emoji: '⚡' },
+            { id: 'skull', emoji: '💀' },
+            { id: 'stop', emoji: '🛑' },
+            { id: 'eyes', emoji: '👀' }
+        ];
+        EMBLEMS.forEach(e => {
+            const opt = document.createElement('option');
+            opt.value = e.id;
+            opt.textContent = e.emoji;
+            opt.selected = existing.warning?.emblem === e.id;
+            emblemSelect.appendChild(opt);
+        });
+
+        // Selector input for link
+        const selectorInput = document.createElement('input');
+        selectorInput.type = 'text';
+        selectorInput.className = 'link-warning-selector';
+        selectorInput.placeholder = 'Element selector (.btn, #id)';
+        selectorInput.value = existing.warning?.elementRegex || '';
+        selectorInput.style.cssText = 'flex: 1; background: #333; color: white; border: 1px solid #444; padding: 4px 8px; border-radius: 4px; font-size: 12px;';
+
+        warningContainer.appendChild(emblemSelect);
+        warningContainer.appendChild(selectorInput);
+
+        pair.appendChild(pairContainer);
+        pair.appendChild(warningToggle);
+        pair.appendChild(warningContainer);
+
         container.insertBefore(pair, container.lastChild);
     }
 
@@ -140,6 +207,13 @@ document.addEventListener('DOMContentLoaded', function () {
         focusName.value = focus.name;
         focusName.placeholder = 'Enter focus name';
         focusName.className = 'focus-name';
+
+        // Create description input
+        const focusDesc = document.createElement('textarea');
+        focusDesc.value = focus.description || '';
+        focusDesc.placeholder = 'Enter focus description (optional)';
+        focusDesc.className = 'focus-description';
+        focusDesc.style.cssText = 'width: 100%; margin-bottom: 12px; padding: 8px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff; min-height: 60px; resize: vertical; display: block;';
 
         // Create links container
         const linksContainer = document.createElement('div');
@@ -340,6 +414,7 @@ document.addEventListener('DOMContentLoaded', function () {
         controls.appendChild(shareBtn);
         controls.appendChild(deleteBtn);
         focusItem.appendChild(focusName);
+        focusItem.appendChild(focusDesc);
         focusItem.appendChild(linksContainer);
         focusItem.appendChild(warningSection);
         focusItem.appendChild(notesSection);
@@ -373,11 +448,31 @@ document.addEventListener('DOMContentLoaded', function () {
         const links = [];
         focusItem.querySelectorAll('.link-pair').forEach(pair => {
             const inputs = pair.getElementsByTagName('input');
-            if (inputs[0].value && inputs[1].value) {
-                links.push({
-                    key: inputs[0].value,
-                    value: inputs[1].value
-                });
+            // inputs[0] is Link Text, inputs[1] is URL, inputs[2] shows up if we check for it inside warning container but let's be safe
+            // Let's select specifically by class
+            const key = pair.querySelector('input[placeholder="Link Text"]')?.value;
+            const value = pair.querySelector('input[placeholder="URL"]')?.value;
+
+            if (key && value) {
+                // Check if warning is configured
+                const warningContainer = pair.querySelector('.link-warning-controls');
+                const isWarningActive = warningContainer.style.display !== 'none';
+
+                let linkData = { key, value };
+
+                if (isWarningActive) {
+                    const emblem = pair.querySelector('.link-warning-emblem').value;
+                    const selector = pair.querySelector('.link-warning-selector').value;
+                    if (selector) {
+                        linkData.warning = {
+                            enabled: true,
+                            emblem: emblem,
+                            elementRegex: selector
+                        };
+                    }
+                }
+
+                links.push(linkData);
             }
         });
 
@@ -403,6 +498,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         return {
             name: focusItem.querySelector('.focus-name').value,
+            description: focusItem.querySelector('.focus-description').value,
             links,
             active: focusItem.classList.contains('active'),
             warning,
