@@ -1,18 +1,18 @@
-# Production Warning - Focus Mode Extension
+# PW Focus
 
-A Chrome extension that helps you stay focused by displaying a customizable focus bar with quick links, and warns you when navigating production environments.
+A Chrome extension + web app for staying focused with customizable link collections, cursor warnings, and context notes.
 
 ## Project Structure
 
 ```
 ├── extension/           # Chrome extension
 │   ├── manifest.json
-│   ├── content.js
-│   ├── background.js
-│   ├── focus.js
+│   ├── content.js       # Page content script
+│   ├── focus.js         # Focus settings UI
+│   ├── warnings.js      # Warning rules management
 │   └── ...
 │
-├── focus-share-web/     # Focus sharing website (Next.js)
+├── focus-share-web/     # Focus sharing website (Next.js + Convex)
 │   ├── src/app/
 │   ├── convex/
 │   ├── Dockerfile
@@ -21,12 +21,12 @@ A Chrome extension that helps you stay focused by displaying a customizable focu
 └── cloudbuild.yaml      # Cloud Build config for website deployment
 ```
 
-## Extension Features
+## Features
 
 - **Focus Bar**: Always-visible bar showing your current focus with quick links
-- **Production Warning**: Visual warning when hovering over elements on production sites
-- **Context Notes**: Add notes to specific pages
-- **Share Focuses**: Share your focus sessions with others
+- **Cursor Warnings**: Customizable visual warnings when hovering on production sites
+- **Context Notes**: Add notes to specific pages (global or per-focus)
+- **Share Focuses**: Share your focus sessions including links, warnings, and notes
 
 ## Development
 
@@ -45,10 +45,4 @@ npm run dev     # Start Next.js dev server
 
 ## Deployment
 
-The website auto-deploys to Google Cloud Run when changes are pushed to `focus-share-web/`.
-
-Configure the Cloud Build trigger with:
-- **Included files filter**: `focus-share-web/**`
-- **Substitution variables**:
-  - `_CONVEX_URL`: Your Convex deployment URL
-  - `_REGION`: Cloud Run region (default: us-central1)
+Website auto-deploys to Google Cloud Run on push to main.
