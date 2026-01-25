@@ -16,7 +16,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # Generate Convex types (requires CONVEX_DEPLOYMENT during build)
-ARG NEXT_PUBLIC_CONVEX_URL
+ARG NEXT_PUBLIC_CONVEX_URL=https://strong-ferret-346.convex.cloud
 ENV NEXT_PUBLIC_CONVEX_URL=$NEXT_PUBLIC_CONVEX_URL
 
 RUN npm run build
