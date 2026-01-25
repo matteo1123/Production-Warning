@@ -297,7 +297,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             try {
                 // Call the share API with full focus data
-                const response = await fetch('FOCUS_SHARE_URL/api/share', {
+                const response = await fetch('https://pwfocus.net/api/share', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(focusData)
@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (response.ok) {
                     const { id } = await response.json();
-                    const shareUrl = `FOCUS_SHARE_URL/focus/${id}`;
+                    const shareUrl = `https://pwfocus.net/focus/${id}`;
 
                     // Copy to clipboard
                     await navigator.clipboard.writeText(shareUrl);

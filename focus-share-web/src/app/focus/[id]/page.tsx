@@ -44,6 +44,8 @@ export default function FocusDetailPage() {
                 detail: {
                     name: share.name,
                     links: share.links,
+                    warning: share.warning,
+                    contextNotes: share.contextNotes,
                 },
             });
             window.dispatchEvent(event);
@@ -115,6 +117,54 @@ export default function FocusDetailPage() {
                     </div>
                 </div>
 
+                {/* Warning Section */}
+                {share.warning && share.warning.enabled && (
+                    <div className="mb-8 p-6 rounded-xl bg-zinc-900/40 border border-yellow-500/20">
+                        <div className="flex items-center gap-3 mb-4">
+                            <span className="text-2xl" role="img" aria-label="Warning Emblem">
+                                {
+                                    {
+                                        production: '⚠️', star: '⭐', heart: '❤️', fire: '🔥',
+                                        warning: '⚡', skull: '💀', stop: '🛑', eyes: '👀'
+                                    }[share.warning.emblem] || '⚠️'
+                                }
+                            </span>
+                            <h2 className="text-xl font-semibold text-yellow-500">Cursor Warning Enabled</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800">
+                                <span className="block text-zinc-500 mb-1">URL Pattern</span>
+                                <code className="text-zinc-300 bg-zinc-800/50 px-2 py-0.5 rounded">{share.warning.urlRegex}</code>
+                            </div>
+                            <div className="p-3 rounded-lg bg-zinc-950 border border-zinc-800">
+                                <span className="block text-zinc-500 mb-1">Element Selector</span>
+                                <code className="text-zinc-300 bg-zinc-800/50 px-2 py-0.5 rounded">{share.warning.elementRegex}</code>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Context Notes Section */}
+                {share.contextNotes && share.contextNotes.length > 0 && (
+                    <div className="mb-8">
+                        <h2 className="text-lg font-semibold text-amber-400 mb-4 flex items-center gap-2">
+                            <span>📝</span> Context Notes
+                        </h2>
+                        <div className="grid gap-3">
+                            {share.contextNotes.map((note, index) => (
+                                <div key={index} className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <span className="text-xs font-mono bg-zinc-800 text-zinc-400 px-2 py-1 rounded border border-zinc-700">
+                                            {note.urlPattern}
+                                        </span>
+                                    </div>
+                                    <p className="text-zinc-300 whitespace-pre-wrap">{note.note}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 {/* Import Button */}
                 <div className="mb-8 p-4 rounded-xl bg-zinc-900/80 border border-zinc-800">
                     {imported ? (
@@ -129,7 +179,7 @@ export default function FocusDetailPage() {
                             onClick={handleImport}
                             className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-semibold rounded-lg transition-all shadow-lg shadow-amber-500/20"
                         >
-                            Import to Focus Extension
+                            Import to PW Focus Extension
                         </button>
                     ) : (
                         <div className="text-center">
@@ -141,7 +191,7 @@ export default function FocusDetailPage() {
                                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                                     <path d="M12 0C8.21 0 4.831 1.757 2.632 4.501l3.953 6.848A5.454 5.454 0 0112 6.545h10.691A12 12 0 0012 0zM1.931 5.47A11.943 11.943 0 000 12c0 6.012 4.42 10.991 10.189 11.864l3.953-6.847a5.45 5.45 0 01-6.865-2.999L1.931 5.47zm13.382 2.166L12.36 12.96a5.454 5.454 0 016.864 2.998h5.346A11.943 11.943 0 0024 12c0-2.42-.72-4.67-1.95-6.556H15.313z" />
                                 </svg>
-                                Get the Extension
+                                Get PW Focus
                             </a>
                         </div>
                     )}
@@ -193,6 +243,8 @@ export default function FocusDetailPage() {
                         __html: JSON.stringify({
                             name: share.name,
                             links: share.links,
+                            warning: share.warning,
+                            contextNotes: share.contextNotes,
                         }),
                     }}
                 />
