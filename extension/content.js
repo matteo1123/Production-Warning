@@ -584,7 +584,12 @@ if (window === window.top) {
         if (focusData.links) {
             focusData.links.forEach(({ key, value }) => {
                 const link = document.createElement('a');
-                link.href = value;
+                // Ensure URL is absolute
+                let url = value;
+                if (!url.match(/^https?:\/\//i)) {
+                    url = 'https://' + url;
+                }
+                link.href = url;
                 link.textContent = key;
                 link.style.cssText = `
                     color: #ffd700;
