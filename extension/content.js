@@ -687,19 +687,16 @@ if (window === window.top) {
     let leaveTimeout;
     let isExpanded = false;
 
-    // Create an invisible hover zone that captures mouse events
-    const hoverZone = document.createElement('div');
-    hoverZone.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 20px;
-        z-index: 10000;
-        pointer-events: auto;
-        background: transparent;
-    `;
-    document.body.appendChild(hoverZone);
+    // Improved hover behavior with stable expansion
+    // (Variables declared above)
+
+    // Remove the blocking hover zone and use mousemove on document instead
+    document.addEventListener('mousemove', (e) => {
+        // Expand if mouse is at the very top of screen
+        if (e.clientY <= 10 && !isExpanded) {
+            expandBar();
+        }
+    });
 
     function expandBar() {
         if (leaveTimeout) {
@@ -720,9 +717,8 @@ if (window === window.top) {
         logoContainer.style.opacity = '1';
         logoContainer.style.height = 'auto';
 
-        // Update hover zone to cover expanded bar height
+        // Update body padding
         requestAnimationFrame(() => {
-            hoverZone.style.height = Math.max(focusBar.offsetHeight + 10, 60) + 'px';
             document.body.style.paddingTop = focusBar.offsetHeight + 'px';
         });
     }
@@ -740,9 +736,6 @@ if (window === window.top) {
         logoContainer.style.opacity = '0';
         logoContainer.style.height = '0';
 
-        // Reset hover zone to small trigger area
-        hoverZone.style.height = '20px';
-
         requestAnimationFrame(() => {
             document.body.style.paddingTop = focusBar.offsetHeight + 'px';
         });
@@ -754,21 +747,11 @@ if (window === window.top) {
         }
         leaveTimeout = setTimeout(() => {
             // Double-check mouse isn't over the bar or hover zone
-            if (!focusBar.matches(':hover') && !hoverZone.matches(':hover')) {
+            if (!focusBar.matches(':hover')) {
                 collapseBar();
             }
         }, 300);
     }
-
-    // Hover zone triggers expansion
-    hoverZone.addEventListener('mouseenter', expandBar);
-    hoverZone.addEventListener('mouseleave', function (e) {
-        // If moving into the focus bar, don't collapse
-        if (focusBar.contains(e.relatedTarget)) {
-            return;
-        }
-        scheduleCollapse();
-    });
 
     // Focus bar also handles hover
     focusBar.addEventListener('mouseenter', function () {
@@ -783,10 +766,6 @@ if (window === window.top) {
     });
 
     focusBar.addEventListener('mouseleave', function (e) {
-        // If moving into the hover zone, don't collapse
-        if (e.relatedTarget === hoverZone) {
-            return;
-        }
         scheduleCollapse();
     });
 
