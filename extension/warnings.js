@@ -171,8 +171,8 @@ function renderRules() {
                 <div class="rule-header">
                     <span class="rule-pattern">${escapeHtml(rule.urlPattern)}</span>
                     <div class="rule-controls">
-                        <button onclick="editRule('${rule.id}')">Edit</button>
-                        <button onclick="deleteRule('${rule.id}')" style="background:#cc0000;">Delete</button>
+                        <button class="edit-btn" data-id="${rule.id}">Edit</button>
+                        <button class="delete-btn" data-id="${rule.id}" style="background:#cc0000;">Delete</button>
                     </div>
                 </div>
                 <div class="rule-details">
@@ -183,6 +183,18 @@ function renderRules() {
         `;
     }).join('');
 }
+
+// Event delegation for dynamically added buttons
+rulesList.addEventListener('click', (e) => {
+    const editBtn = e.target.closest('.edit-btn');
+    const deleteBtn = e.target.closest('.delete-btn');
+
+    if (editBtn) {
+        editRule(editBtn.dataset.id);
+    } else if (deleteBtn) {
+        deleteRule(deleteBtn.dataset.id);
+    }
+});
 
 function escapeHtml(text) {
     const div = document.createElement('div');

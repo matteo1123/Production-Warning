@@ -77,6 +77,12 @@ export default function FocusDetailPage() {
         );
     }
 
+    // Helper to ensure absolute URLs
+    const formatUrl = (url: string) => {
+        if (!url || url.match(/^https?:\/\//i)) return url;
+        return 'https://' + url;
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950">
             {/* Header */}
@@ -145,7 +151,7 @@ export default function FocusDetailPage() {
                                 onClick={() => {
                                     if (confirm('This will open ' + share.links.length + ' tabs. Continue?')) {
                                         share.links.forEach((link) => {
-                                            window.open(link.value, '_blank');
+                                            window.open(formatUrl(link.value), '_blank');
                                         });
                                     }
                                 }}
@@ -226,7 +232,7 @@ export default function FocusDetailPage() {
                     {share.links.map((link, index) => (
                         <a
                             key={index}
-                            href={link.value}
+                            href={formatUrl(link.value)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="block p-4 rounded-xl bg-zinc-900/60 border border-zinc-800 hover:order-[0] hover:border-amber-500/50 transition-all group"

@@ -1,8 +1,8 @@
 // Only inject the focus bar if we're in the main window, not an iframe
 if (window === window.top) {
     // Focus Share Import Detection
-    // Check if we're on a focus share website (update FOCUS_SHARE_URL with actual domain)
-    const FOCUS_SHARE_DOMAIN = 'FOCUS_SHARE_URL'; // Update this when deployed
+    // Check if we're on a focus share website
+    const FOCUS_SHARE_DOMAIN = 'pwfocus.net';
 
     if (window.location.href.includes(FOCUS_SHARE_DOMAIN) ||
         window.location.href.includes('localhost:3000')) {
@@ -415,16 +415,16 @@ if (window === window.top) {
 
         element.addEventListener('mouseenter', function () {
             this.style.cursor = cursorValue;
-            // Also add a subtle border glow
-            this._originalOutline = this.style.outline;
-            this.style.outline = `2px solid ${emblemInfo.color}`;
-            this.style.outlineOffset = '2px';
+            // Also add a subtle border glow - Disabled per user request
+            // this._originalOutline = this.style.outline;
+            // this.style.outline = `2px solid ${emblemInfo.color}`;
+            // this.style.outlineOffset = '2px';
         });
 
         element.addEventListener('mouseleave', function () {
             this.style.cursor = originalCursor || '';
-            this.style.outline = this._originalOutline || '';
-            this.style.outlineOffset = '';
+            // this.style.outline = this._originalOutline || '';
+            // this.style.outlineOffset = '';
         });
     }
 
@@ -1103,4 +1103,5 @@ if (window === window.top) {
     contextNotesBtn.style.pointerEvents = 'auto';
     linksContainer.style.pointerEvents = 'auto';
     notesPopup.style.pointerEvents = 'auto';
+}
 

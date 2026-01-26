@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Create "Add Link" button
         const addLinkBtn = document.createElement('button');
         addLinkBtn.textContent = 'Add Link';
+        addLinkBtn.type = 'button';
         addLinkBtn.style.marginTop = '8px';
         addLinkBtn.className = 'add-link-btn';
 
@@ -116,20 +117,36 @@ document.addEventListener('DOMContentLoaded', function () {
         // Toggle for link warning
         const warningToggle = document.createElement('div');
         warningToggle.style.cssText = 'font-size: 11px; color: #888; cursor: pointer; display: flex; align-items: center; gap: 4px; margin-top: 2px;';
+        warningToggle.className = 'warning-toggle';
         warningToggle.innerHTML = '<span class="warning-icon">⚠️</span> Configure Warning';
         warningToggle.onclick = () => {
             const isHidden = warningContainer.style.display === 'none';
             warningContainer.style.display = isHidden ? 'flex' : 'none';
-            warningContainer.style.gap = '8px';
-            warningContainer.style.alignItems = 'center';
+            if (isHidden) {
+                warningContainer.style.flexDirection = 'column';
+                warningContainer.style.gap = '8px';
+            }
             warningToggle.style.color = isHidden ? '#ffd700' : '#888';
         };
 
+        // Enable checkbox
+        const dataContainer = document.createElement('div');
+        dataContainer.style.cssText = 'display: flex; gap: 8px; align-items: center;';
+
+        const enabledLabel = document.createElement('label');
+        enabledLabel.style.cssText = 'display: flex; align-items: center; gap: 4px; color: #fff; font-size: 12px;';
+        const enabledInput = document.createElement('input');
+        enabledInput.type = 'checkbox';
+        enabledInput.className = 'link-warning-enabled';
+        enabledInput.checked = existing.warning?.enabled || false;
+        enabledLabel.appendChild(enabledInput);
+        enabledLabel.appendChild(document.createTextNode('Enable'));
+
+        dataContainer.appendChild(enabledLabel);
+        warningContainer.appendChild(dataContainer);
+
         // Initialize state based on existing data
-        if (existing.warning && existing.warning.enabled) {
-            warningContainer.style.display = 'flex';
-            warningContainer.style.gap = '8px';
-            warningContainer.style.alignItems = 'center';
+        if (existing.warning?.enabled) {
             warningToggle.style.color = '#ffd700';
         }
 
@@ -162,6 +179,9 @@ document.addEventListener('DOMContentLoaded', function () {
         selectorInput.placeholder = 'Element selector (.btn, #id)';
         selectorInput.value = existing.warning?.elementRegex || '';
         selectorInput.style.cssText = 'flex: 1; background: #333; color: white; border: 1px solid #444; padding: 4px 8px; border-radius: 4px; font-size: 12px;';
+
+        dataContainer.appendChild(emblemSelect);
+        dataContainer.appendChild(selectorInput);
 
         warningContainer.appendChild(emblemSelect);
         warningContainer.appendChild(selectorInput);
@@ -350,6 +370,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Create Share button
         const shareBtn = document.createElement('button');
         shareBtn.textContent = 'Share';
+        shareBtn.type = 'button';
         shareBtn.className = 'share-btn';
         shareBtn.style.backgroundColor = '#1a1a1a';
         shareBtn.onclick = async () => {
@@ -402,6 +423,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Create Delete button
         const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
         deleteBtn.textContent = 'Delete';
         deleteBtn.className = 'delete-btn';
         deleteBtn.onclick = () => {
@@ -454,21 +476,28 @@ document.addEventListener('DOMContentLoaded', function () {
             const value = pair.querySelector('input[placeholder="URL"]')?.value;
 
             if (key && value) {
-                // Check if warning is configured
-                const warningContainer = pair.querySelector('.link-warning-controls');
-                const isWarningActive = warningContainer.style.display !== 'none';
-
                 let linkData = { key, value };
 
-                if (isWarningActive) {
-                    const emblem = pair.querySelector('.link-warning-emblem').value;
-                    const selector = pair.querySelector('.link-warning-selector').value;
-                    if (selector) {
+                if (pair.querySelector('.link-warning-enabled')) {
+                    const isEnabled = pair.querySelector('.link-warning-enabled').checked;
+                    if (isEnabled) {
+                        const emblem = pair.querySelector('.link-warning-emblem').value;
+                        const selector = pair.querySelector('.link-warning-selector').value;
                         linkData.warning = {
                             enabled: true,
                             emblem: emblem,
                             elementRegex: selector
                         };
+                    }
+                } else {
+                    // Fallback for transition or errors
+                    const isWarningActive = pair.querySelector('.link-warning-controls').style.display !== 'none';
+                    if (isWarningActive) {
+                        const emblem = pair.querySelector('.link-warning-emblem').value;
+                        const selector = pair.querySelector('.link-warning-selector').value;
+                        if (selector) {
+                            linkData.warning = { enabled: true, emblem, elementRegex: selector };
+                        }
                     }
                 }
 
