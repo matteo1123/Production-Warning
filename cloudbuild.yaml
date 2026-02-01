@@ -38,17 +38,21 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       - '--set-env-vars'
-      - 'NEXT_PUBLIC_CONVEX_URL=${_CONVEX_URL}'
+      - 'NEXT_PUBLIC_CONVEX_URL=${_CONVEX_URL},STRIPE_SECRET_KEY=${_STRIPE_SECRET_KEY},STRIPE_WEBHOOK_SECRET=${_STRIPE_WEBHOOK_SECRET},STRIPE_PREMIUM_PRICE_ID=${_STRIPE_PREMIUM_PRICE_ID},NEXT_PUBLIC_APP_URL=${_APP_URL}'
 
 # Store images in Container Registry
 images:
   - 'gcr.io/$PROJECT_ID/focus-share:$COMMIT_SHA'
   - 'gcr.io/$PROJECT_ID/focus-share:latest'
 
-# Substitution variables (set these in Cloud Build trigger)
+# Substitution variables (set these in Cloud Build trigger settings)
 substitutions:
   _REGION: 'us-central1'
   _CONVEX_URL: 'https://strong-ferret-346.convex.cloud'
+  _STRIPE_SECRET_KEY: ''   # Set in Cloud Build trigger
+  _STRIPE_WEBHOOK_SECRET: '' # Set in Cloud Build trigger
+  _STRIPE_PREMIUM_PRICE_ID: '' # Set in Cloud Build trigger
+  _APP_URL: 'https://pwfocus.net'
 
 # Build timeout
 timeout: '1200s'

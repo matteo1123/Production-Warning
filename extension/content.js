@@ -182,7 +182,7 @@ if (window === window.top) {
             focusMode.enabled = false;
             chrome.storage.sync.set({ focusMode }, function () {
                 focusBar.style.display = 'none';
-                document.body.style.paddingTop = '0';
+                document.documentElement.style.marginTop = '0';
             });
         });
     });
@@ -256,15 +256,54 @@ if (window === window.top) {
     `;
     focusBar.appendChild(linksContainer);
 
-    // Add context notes button
-    const contextNotesBtn = document.createElement('div');
-    contextNotesBtn.style.cssText = `
+    // Right side button container
+    const rightButtonContainer = document.createElement('div');
+    rightButtonContainer.style.cssText = `
         position: absolute;
         right: 10px;
         top: 50%;
         transform: translateY(-50%);
-        width: 20px;
-        height: 20px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        pointer-events: auto;
+    `;
+
+    // Add chat button (Ask Focus)
+    const chatBtn = document.createElement('div');
+    chatBtn.style.cssText = `
+        width: 24px;
+        height: 24px;
+        background-color: #2a2a2a;
+        border: 2px solid #ffd700;
+        border-radius: 50%;
+        color: #ffd700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        line-height: 1;
+        pointer-events: auto;
+    `;
+    chatBtn.innerHTML = '💬';
+    chatBtn.title = 'Ask Focus - Chat with your open tabs';
+
+    chatBtn.addEventListener('mouseover', function () {
+        this.style.backgroundColor = '#ffd700';
+        this.style.color = '#1a1a1a';
+    });
+    chatBtn.addEventListener('mouseout', function () {
+        this.style.backgroundColor = '#2a2a2a';
+        this.style.color = '#ffd700';
+    });
+
+    // Add context notes button
+    const contextNotesBtn = document.createElement('div');
+    contextNotesBtn.style.cssText = `
+        width: 24px;
+        height: 24px;
         background-color: #2a2a2a;
         border: 2px solid #ffd700;
         border-radius: 50%;
@@ -278,6 +317,7 @@ if (window === window.top) {
         line-height: 1;
         padding-bottom: 1px;
         pointer-events: auto;
+        position: relative;
     `;
     contextNotesBtn.innerHTML = '&#43;'; // Using HTML entity for plus sign
     contextNotesBtn.title = 'Add Context Notes';
@@ -295,7 +335,11 @@ if (window === window.top) {
         display: none;
     `;
     contextNotesBtn.appendChild(notificationDot);
-    focusBar.appendChild(contextNotesBtn);
+
+    // Add buttons to container
+    rightButtonContainer.appendChild(chatBtn);
+    rightButtonContainer.appendChild(contextNotesBtn);
+    focusBar.appendChild(rightButtonContainer);
 
     // Create notes popup
     const notesPopup = document.createElement('div');
@@ -353,6 +397,336 @@ if (window === window.top) {
     notesPopup.appendChild(addNoteBtn);
     notesPopup.appendChild(notesList);
     document.body.appendChild(notesPopup);
+
+    // Create floating chat popup (Ask Focus)
+    const chatPopup = document.createElement('div');
+    chatPopup.style.cssText = `
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        width: 380px;
+        height: 500px;
+        background-color: #1a1a1a;
+        border: 2px solid #ffd700;
+        border-radius: 12px;
+        z-index: 10003;
+        display: none;
+        flex-direction: column;
+        color: #ffd700;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        pointer-events: auto;
+        overflow: hidden;
+        resize: both;
+        min-width: 300px;
+        min-height: 300px;
+    `;
+
+    // Chat header (draggable)
+    const chatHeader = document.createElement('div');
+    chatHeader.style.cssText = `
+        padding: 12px 16px;
+        background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+        border-bottom: 1px solid #ffd700;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: move;
+        user-select: none;
+    `;
+
+    const chatTitle = document.createElement('div');
+    chatTitle.style.cssText = `
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: bold;
+        font-size: 14px;
+    `;
+    chatTitle.innerHTML = '💬 Ask Focus';
+
+    const chatCloseBtn = document.createElement('button');
+    chatCloseBtn.style.cssText = `
+        background: none;
+        border: none;
+        color: #ffd700;
+        font-size: 20px;
+        cursor: pointer;
+        padding: 0 4px;
+        line-height: 1;
+        transition: color 0.2s;
+    `;
+    chatCloseBtn.innerHTML = '×';
+    chatCloseBtn.addEventListener('mouseover', () => chatCloseBtn.style.color = '#cc0000');
+    chatCloseBtn.addEventListener('mouseout', () => chatCloseBtn.style.color = '#ffd700');
+    chatCloseBtn.addEventListener('click', () => chatPopup.style.display = 'none');
+
+    chatHeader.appendChild(chatTitle);
+    chatHeader.appendChild(chatCloseBtn);
+    chatPopup.appendChild(chatHeader);
+
+    // Chat messages container
+    const chatMessages = document.createElement('div');
+    chatMessages.style.cssText = `
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    `;
+
+    // Welcome message
+    const welcomeMsg = document.createElement('div');
+    welcomeMsg.style.cssText = `
+        background-color: #2a2a2a;
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-size: 13px;
+        line-height: 1.5;
+        border-left: 3px solid #ffd700;
+    `;
+    welcomeMsg.innerHTML = `<strong>Welcome to Ask Focus!</strong><br><br>Ask questions about the content across all your open tabs in this focus. I'll analyze the pages and provide answers based on what you're working on.`;
+    chatMessages.appendChild(welcomeMsg);
+    chatPopup.appendChild(chatMessages);
+
+    // Chat input area
+    const chatInputArea = document.createElement('div');
+    chatInputArea.style.cssText = `
+        padding: 12px;
+        border-top: 1px solid #3a3a3a;
+        background-color: #2a2a2a;
+    `;
+
+    const chatInputContainer = document.createElement('div');
+    chatInputContainer.style.cssText = `
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+    `;
+
+    const chatInput = document.createElement('textarea');
+    chatInput.style.cssText = `
+        flex: 1;
+        background-color: #1a1a1a;
+        border: 1px solid #3a3a3a;
+        border-radius: 8px;
+        color: #ffffff;
+        padding: 10px 12px;
+        font-size: 14px;
+        line-height: 1.4;
+        resize: none;
+        max-height: 100px;
+        min-height: 40px;
+        transition: border-color 0.2s;
+    `;
+    chatInput.placeholder = 'Ask a question about your focus...';
+    chatInput.rows = 1;
+    chatInput.addEventListener('focus', () => chatInput.style.borderColor = '#ffd700');
+    chatInput.addEventListener('blur', () => chatInput.style.borderColor = '#3a3a3a');
+
+    // Auto-resize textarea
+    chatInput.addEventListener('input', function () {
+        this.style.height = 'auto';
+        this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+    });
+
+    const chatSendBtn = document.createElement('button');
+    chatSendBtn.style.cssText = `
+        background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%);
+        border: none;
+        border-radius: 8px;
+        color: #1a1a1a;
+        padding: 10px 16px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    `;
+    chatSendBtn.innerHTML = 'Send';
+    chatSendBtn.addEventListener('mouseover', () => {
+        chatSendBtn.style.transform = 'scale(1.02)';
+        chatSendBtn.style.boxShadow = '0 2px 8px rgba(255, 215, 0, 0.3)';
+    });
+    chatSendBtn.addEventListener('mouseout', () => {
+        chatSendBtn.style.transform = 'scale(1)';
+        chatSendBtn.style.boxShadow = 'none';
+    });
+
+    chatInputContainer.appendChild(chatInput);
+    chatInputContainer.appendChild(chatSendBtn);
+    chatInputArea.appendChild(chatInputContainer);
+    chatPopup.appendChild(chatInputArea);
+
+    // Make chat popup draggable
+    let isDragging = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
+
+    chatHeader.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        dragOffsetX = e.clientX - chatPopup.offsetLeft;
+        dragOffsetY = e.clientY - chatPopup.offsetTop;
+        chatPopup.style.transition = 'none';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const newX = e.clientX - dragOffsetX;
+        const newY = e.clientY - dragOffsetY;
+
+        // Keep within viewport bounds
+        const maxX = window.innerWidth - chatPopup.offsetWidth;
+        const maxY = window.innerHeight - chatPopup.offsetHeight;
+
+        chatPopup.style.left = Math.max(0, Math.min(newX, maxX)) + 'px';
+        chatPopup.style.top = Math.max(0, Math.min(newY, maxY)) + 'px';
+        chatPopup.style.right = 'auto';
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+        chatPopup.style.transition = '';
+    });
+
+    document.body.appendChild(chatPopup);
+
+    // Chat button click handler
+    chatBtn.addEventListener('click', () => {
+        const isVisible = chatPopup.style.display === 'flex';
+        chatPopup.style.display = isVisible ? 'none' : 'flex';
+        if (!isVisible) {
+            chatInput.focus();
+        }
+    });
+
+    // Close chat when clicking outside
+    document.addEventListener('click', (e) => {
+        if (chatPopup.style.display === 'flex' &&
+            !chatPopup.contains(e.target) &&
+            !chatBtn.contains(e.target)) {
+            // Don't close - allow user to interact with page while chat is open
+        }
+    });
+
+    // Handle Enter key to send message
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChatMessage();
+        }
+    });
+
+    chatSendBtn.addEventListener('click', sendChatMessage);
+
+    // Function to add message to chat
+    function addChatMessage(content, isUser = false) {
+        const msgDiv = document.createElement('div');
+        msgDiv.style.cssText = `
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            max-width: 85%;
+            word-wrap: break-word;
+            ${isUser
+                ? 'background: linear-gradient(135deg, #ffd700 0%, #ffb700 100%); color: #1a1a1a; align-self: flex-end; border-bottom-right-radius: 4px;'
+                : 'background-color: #2a2a2a; color: #ffffff; align-self: flex-start; border-left: 3px solid #ffd700; border-bottom-left-radius: 4px;'
+            }
+        `;
+        msgDiv.textContent = content;
+        chatMessages.appendChild(msgDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return msgDiv;
+    }
+
+    // Function to add loading indicator
+    function addLoadingMessage() {
+        const loadingDiv = document.createElement('div');
+        loadingDiv.className = 'chat-loading';
+        loadingDiv.style.cssText = `
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.5;
+            background-color: #2a2a2a;
+            color: #888;
+            align-self: flex-start;
+            border-left: 3px solid #ffd700;
+        `;
+        loadingDiv.innerHTML = '<span class="typing-dots">Analyzing your focus tabs<span>.</span><span>.</span><span>.</span></span>';
+        chatMessages.appendChild(loadingDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return loadingDiv;
+    }
+
+    // Function to send chat message
+    async function sendChatMessage() {
+        const question = chatInput.value.trim();
+        if (!question) return;
+
+        // Add user message
+        addChatMessage(question, true);
+        chatInput.value = '';
+        chatInput.style.height = 'auto';
+
+        // Disable input while processing
+        chatInput.disabled = true;
+        chatSendBtn.disabled = true;
+        chatSendBtn.style.opacity = '0.6';
+
+        const loadingMsg = addLoadingMessage();
+
+        try {
+            // Request content extraction from background script
+            const response = await chrome.runtime.sendMessage({
+                type: 'EXTRACT_FOCUS_CONTENT',
+                question: question
+            });
+
+            loadingMsg.remove();
+
+            if (response && response.error) {
+                addChatMessage(`Error: ${response.error}`, false);
+            } else if (response && response.answer) {
+                addChatMessage(response.answer, false);
+            } else {
+                addChatMessage('Sorry, I couldn\'t process your request. Please try again.', false);
+            }
+        } catch (error) {
+            loadingMsg.remove();
+            addChatMessage(`Error: ${error.message || 'Failed to process request'}`, false);
+        } finally {
+            // Re-enable input
+            chatInput.disabled = false;
+            chatSendBtn.disabled = false;
+            chatSendBtn.style.opacity = '1';
+            chatInput.focus();
+        }
+    }
+
+    // Add typing animation styles
+    const chatStyles = document.createElement('style');
+    chatStyles.textContent = `
+        .typing-dots span {
+            animation: blink 1.4s infinite;
+            animation-fill-mode: both;
+        }
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes blink {
+            0% { opacity: 0.2; }
+            20% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+    `;
+    document.head.appendChild(chatStyles);
 
     document.body.appendChild(focusBar);
 
@@ -471,15 +845,31 @@ if (window === window.top) {
     }
 
     // Mutation observer for dynamically added elements
+    let mutationTimeout;
     const warningObserver = new MutationObserver((mutations) => {
+        let shouldProcess = false;
         mutations.forEach(mutation => {
-            mutation.addedNodes.forEach(node => {
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                    processWarningElements(node);
-                    processFocusWarningElements(node);
-                }
-            });
+            if (mutation.type === 'childList') {
+                shouldProcess = true;
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === Node.ELEMENT_NODE) {
+                        processWarningElements(node);
+                        processFocusWarningElements(node);
+                    }
+                });
+            }
         });
+
+        if (shouldProcess) {
+            // Debounce the fixed element offset to avoid performance hits
+            if (mutationTimeout) clearTimeout(mutationTimeout);
+            mutationTimeout = setTimeout(() => {
+                const barHeight = focusBar.offsetHeight;
+                if (focusBar.style.display !== 'none' && barHeight > 0) {
+                    offsetFixedElements(barHeight);
+                }
+            }, 100);
+        }
     });
 
     // Active focus warning config
@@ -573,7 +963,7 @@ if (window === window.top) {
     function updateFocusBar(focusData) {
         if (!focusData || !focusData.enabled) {
             focusBar.style.display = 'none';
-            document.body.style.paddingTop = '0';
+            document.documentElement.style.marginTop = '0';
             restoreFixedElements();
             return;
         }
@@ -617,9 +1007,10 @@ if (window === window.top) {
 
         focusBar.style.display = 'block';
         // Set padding based on actual bar height after it's rendered
+        // Set margin based on actual bar height after it's rendered
         requestAnimationFrame(() => {
             const barHeight = focusBar.offsetHeight;
-            document.body.style.paddingTop = barHeight + 'px';
+            document.documentElement.style.marginTop = barHeight + 'px';
 
             // Also offset fixed-position elements that are at the top
             offsetFixedElements(barHeight);
@@ -631,30 +1022,71 @@ if (window === window.top) {
 
     // Function to offset fixed-position elements at top: 0
     function offsetFixedElements(barHeight) {
-        // Find all elements with position: fixed and top: 0
-        const allElements = document.querySelectorAll('*');
+        if (!barHeight && focusBar.style.display !== 'none') {
+            barHeight = focusBar.offsetHeight;
+        } else if (!barHeight) {
+            return;
+        }
+
+        // Find all elements with position: fixed
+        // We select * to be safe, though this can be expensive on huge pages. 
+        // Optimized to check computed style only if likely candidate.
+        const allElements = document.querySelectorAll('header, nav, div, [class*="header"], [class*="nav"], [class*="bar"], [class*="menu"]');
 
         allElements.forEach(el => {
             // Skip our own elements
-            if (el === focusBar || el === hoverZone || focusBar.contains(el)) {
+            if (el === focusBar || el === hoverBox || focusBar.contains(el) || el.id === 'focus-extension-import-overlay') {
                 return;
             }
 
-            const style = window.getComputedStyle(el);
-            if (style.position === 'fixed') {
-                const topValue = parseInt(style.top, 10);
+            // Optimization: skip hidden elements
+            if (el.offsetParent === null) return;
 
-                // If element is fixed at the top (within 5px of 0)
-                if (!isNaN(topValue) && topValue >= 0 && topValue <= 5) {
+            const style = window.getComputedStyle(el);
+            if (style.position === 'fixed' || style.position === 'sticky') {
+                const topValue = parseInt(style.top, 10);
+                const rect = el.getBoundingClientRect();
+
+                // If element is visually at the top (within 5px of 0)
+                // We check style.top specifically or if it's 'auto' but visually at top
+                let isAtTop = false;
+
+                if (style.top !== 'auto' && !isNaN(topValue) && topValue >= 0 && topValue <= 5) {
+                    isAtTop = true;
+                } else if (style.top === 'auto' && rect.top <= 5) {
+                    isAtTop = true;
+                }
+
+                if (isAtTop) {
                     // Store original value if we haven't already
                     if (!modifiedFixedElements.has(el)) {
                         modifiedFixedElements.set(el, {
-                            originalTop: el.style.top || style.top
+                            originalTop: el.style.top,
+                            originalTransition: el.style.transition
                         });
+                        // Add transition for smooth movement
+                        el.style.transition = (el.style.transition ? el.style.transition + ', ' : '') + 'top 0.3s ease';
                     }
 
-                    // Offset by the bar height
-                    el.style.top = (topValue + barHeight) + 'px';
+                    // Calculate new top
+                    // If it was 'auto', we need to set it to an explicit pixel value relative to the viewport
+                    // But wait, if it was 'auto' and 'fixed', it's positioned based on flow or 0. 
+                    // Safest is to add the bar height to whatever the current visual top is, OR if it's 0, set to barHeight.
+
+                    // Simple approach: if we determined it's at Top 0, set top to barHeight.
+                    // If it had an explicit top (e.g. 0px), we change it to barHeight.
+
+                    // However, we must be careful not to apply it double if we run this multiple times.
+                    // The 'modifiedFixedElements' check prevents re-storing original, but we need to ensure we don't add barHeight to already modified value.
+                    // actually, we should calculate target top based on original.
+
+                    const originalData = modifiedFixedElements.get(el);
+                    let baseTop = 0;
+                    if (originalData.originalTop && originalData.originalTop !== 'auto') {
+                        baseTop = parseInt(originalData.originalTop, 10) || 0;
+                    }
+
+                    el.style.top = (baseTop + barHeight) + 'px';
                 }
             }
         });
@@ -665,6 +1097,11 @@ if (window === window.top) {
         modifiedFixedElements.forEach((data, el) => {
             if (el && el.style) {
                 el.style.top = data.originalTop;
+                if (data.originalTransition !== undefined) {
+                    el.style.transition = data.originalTransition;
+                } else {
+                    el.style.removeProperty('transition');
+                }
             }
         });
         modifiedFixedElements.clear();
@@ -717,9 +1154,11 @@ if (window === window.top) {
         logoContainer.style.opacity = '1';
         logoContainer.style.height = 'auto';
 
-        // Update body padding
+        // Update html margin
         requestAnimationFrame(() => {
-            document.body.style.paddingTop = focusBar.offsetHeight + 'px';
+            const barHeight = focusBar.offsetHeight;
+            document.documentElement.style.marginTop = barHeight + 'px';
+            offsetFixedElements(barHeight);
         });
     }
 
@@ -737,7 +1176,9 @@ if (window === window.top) {
         logoContainer.style.height = '0';
 
         requestAnimationFrame(() => {
-            document.body.style.paddingTop = focusBar.offsetHeight + 'px';
+            const barHeight = focusBar.offsetHeight;
+            document.documentElement.style.marginTop = barHeight + 'px';
+            offsetFixedElements(barHeight);
         });
     }
 
@@ -1087,5 +1528,7 @@ if (window === window.top) {
     contextNotesBtn.style.pointerEvents = 'auto';
     linksContainer.style.pointerEvents = 'auto';
     notesPopup.style.pointerEvents = 'auto';
+    chatBtn.style.pointerEvents = 'auto';
+    chatPopup.style.pointerEvents = 'auto';
 }
 

@@ -36,14 +36,31 @@ export const createShare = mutation({
             )
         ),
         sharedBy: v.optional(v.string()),
+        // New: visibility and owner for private sharing
+        visibility: v.optional(v.string()),
+        ownerEmail: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
+        // If private, look up owner ID
+        let ownerId = undefined;
+        if (args.visibility === "private" && args.ownerEmail) {
+            const owner = await ctx.db
+                .query("users")
+                .withIndex("by_email", (q) => q.eq("email", args.ownerEmail!))
+                .unique();
+            if (owner) {
+                ownerId = owner._id;
+            }
+        }
+
         const id = await ctx.db.insert("shared_focuses", {
             name: args.name,
             description: args.description,
             links: args.links,
             warning: args.warning,
             contextNotes: args.contextNotes,
+            visibility: args.visibility || "public",
+            ownerId: ownerId,
             createdAt: Date.now(),
             views: 0,
             sharedBy: args.sharedBy,
@@ -52,17 +69,51 @@ export const createShare = mutation({
     },
 });
 
-// Get all shared focuses (most recent first)
+// Get all shared focuses (most recent first) - only public ones
 export const listShares = query({
     args: {
         limit: v.optional(v.number()),
     },
     handler: async (ctx, args) => {
         const limit = args.limit ?? 50;
-        const shares = await ctx.db
+        const allShares = await ctx.db
             .query("shared_focuses")
             .order("desc")
+            .take(limit * 2); // Fetch more to filter
+
+        // Filter to only public shares
+        const publicShares = allShares
+            .filter(share => !share.visibility || share.visibility === "public")
+            .slice(0, limit);
+
+        return publicShares;
+    },
+});
+
+// Get user's own shares (including private)
+export const listMyShares = query({
+    args: {
+        email: v.string(),
+        limit: v.optional(v.number()),
+    },
+    handler: async (ctx, args) => {
+        // Find user
+        const user = await ctx.db
+            .query("users")
+            .withIndex("by_email", (q) => q.eq("email", args.email))
+            .unique();
+
+        if (!user) {
+            return [];
+        }
+
+        const limit = args.limit ?? 50;
+        const shares = await ctx.db
+            .query("shared_focuses")
+            .withIndex("by_owner", (q) => q.eq("ownerId", user._id))
+            .order("desc")
             .take(limit);
+
         return shares;
     },
 });
@@ -71,10 +122,41 @@ export const listShares = query({
 export const getShare = query({
     args: {
         id: v.id("shared_focuses"),
+        viewerEmail: v.optional(v.string()),
     },
     handler: async (ctx, args) => {
         const share = await ctx.db.get(args.id);
-        return share;
+
+        if (!share) {
+            return null;
+        }
+
+        // If private, check if viewer is owner
+        if (share.visibility === "private") {
+            if (!args.viewerEmail) {
+                // No viewer email provided - return limited info
+                return {
+                    ...share,
+                    isPrivate: true,
+                    accessDenied: true,
+                };
+            }
+
+            const viewer = await ctx.db
+                .query("users")
+                .withIndex("by_email", (q) => q.eq("email", args.viewerEmail!))
+                .unique();
+
+            if (!viewer || !share.ownerId || viewer._id !== share.ownerId) {
+                return {
+                    ...share,
+                    isPrivate: true,
+                    accessDenied: true,
+                };
+            }
+        }
+
+        return { ...share, isPrivate: share.visibility === "private", accessDenied: false };
     },
 });
 
