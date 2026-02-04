@@ -5,7 +5,7 @@ import { api } from '../../../../../convex/_generated/api';
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2024-12-18.acacia',
+    apiVersion: '2026-01-28.clover',
 });
 
 // Initialize Convex client
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
                     email: user.email,
                     tier,
                     subscriptionStatus: status,
-                    subscriptionEndsAt: subscription.current_period_end * 1000,
+                    subscriptionEndsAt: ((subscription as { current_period_end?: number }).current_period_end || 0) * 1000,
                 });
                 console.log(`Updated subscription for ${user.email}: ${status}`);
             }
@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
                     email: user.email,
                     tier: 'free',
                     subscriptionStatus: 'canceled',
-                    subscriptionEndsAt: subscription.current_period_end * 1000,
+                    subscriptionEndsAt: ((subscription as { current_period_end?: number }).current_period_end || 0) * 1000,
                 });
                 console.log(`Canceled subscription for ${user.email}`);
             }

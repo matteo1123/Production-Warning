@@ -3,6 +3,7 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Link from "next/link";
+import { Header } from "../components/Header";
 
 export default function Home() {
   const shares = useQuery(api.shares.listShares, { limit: 50 });
@@ -10,26 +11,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950">
       {/* Header */}
-      <header className="border-b border-amber-500/20 bg-zinc-950/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-red-600 rounded-lg flex items-center justify-center">
-              <span className="text-xl font-bold text-white">F</span>
-            </div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-amber-400 to-amber-200 bg-clip-text text-transparent">
-              PW Focus
-            </h1>
-          </div>
-          <a
-            href="https://chromewebstore.google.com/detail/production-warning/gijcnlfiljejcgbcjnkpnbefjngcgapd"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold rounded-lg transition-colors"
-          >
-            Get Extension
-          </a>
-        </div>
-      </header>
+      <Header />
+      <div className="h-16" /> {/* Spacer for fixed header */}
 
       {/* Hero */}
       < section className="max-w-6xl mx-auto px-6 py-16 text-center" >

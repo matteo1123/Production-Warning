@@ -10,6 +10,8 @@ steps:
       - 'gcr.io/$PROJECT_ID/focus-share:latest'
       - '--build-arg'
       - 'NEXT_PUBLIC_CONVEX_URL=${_CONVEX_URL}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${_CLERK_PUBLISHABLE_KEY}'
       - '.'
 
   # Push the image to Container Registry
@@ -38,7 +40,7 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       - '--set-env-vars'
-      - 'NEXT_PUBLIC_CONVEX_URL=${_CONVEX_URL},STRIPE_SECRET_KEY=${_STRIPE_SECRET_KEY},STRIPE_WEBHOOK_SECRET=${_STRIPE_WEBHOOK_SECRET},STRIPE_PREMIUM_PRICE_ID=${_STRIPE_PREMIUM_PRICE_ID},NEXT_PUBLIC_APP_URL=${_APP_URL}'
+      - 'NEXT_PUBLIC_CONVEX_URL=${_CONVEX_URL},STRIPE_SECRET_KEY=${_STRIPE_SECRET_KEY},STRIPE_WEBHOOK_SECRET=${_STRIPE_WEBHOOK_SECRET},STRIPE_PREMIUM_PRICE_ID=${_STRIPE_PREMIUM_PRICE_ID},NEXT_PUBLIC_APP_URL=${_APP_URL},NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${_CLERK_PUBLISHABLE_KEY},CLERK_SECRET_KEY=${_CLERK_SECRET_KEY}'
 
 # Store images in Container Registry
 images:
@@ -53,6 +55,8 @@ substitutions:
   _STRIPE_WEBHOOK_SECRET: '' # Set in Cloud Build trigger
   _STRIPE_PREMIUM_PRICE_ID: '' # Set in Cloud Build trigger
   _APP_URL: 'https://pwfocus.net'
+  _CLERK_PUBLISHABLE_KEY: '' # Set in Cloud Build trigger
+  _CLERK_SECRET_KEY: ''      # Set in Cloud Build trigger
 
 # Build timeout
 timeout: '1200s'

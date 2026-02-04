@@ -44,7 +44,7 @@ export const askFocus = action({
         userEmail: v.optional(v.string()),
         storeMessage: v.optional(v.boolean()),  // Only store if user opted in
     },
-    handler: async (ctx, args) => {
+    handler: async (ctx, args): Promise<{ answer?: string; error?: string; remaining?: number; upgradeRequired?: boolean }> => {
         const { question, content, focusName, tabCount, userEmail, storeMessage } = args;
 
         // Get API key from environment
