@@ -42,9 +42,10 @@ export const askFocus = action({
         focusName: v.optional(v.string()),
         tabCount: v.optional(v.number()),
         userEmail: v.optional(v.string()),
+        storeMessage: v.optional(v.boolean()),  // Only store if user opted in
     },
     handler: async (ctx, args) => {
-        const { question, content, focusName, tabCount, userEmail } = args;
+        const { question, content, focusName, tabCount, userEmail, storeMessage } = args;
 
         // Get API key from environment
         const apiKey = process.env.GEMINI_API_KEY;
@@ -164,23 +165,25 @@ ${content}`;
                 return { error: 'No response generated. Please try again.' };
             }
 
-            // Log the chat message for troubleshooting
-            // Build the full prompt that was sent to the model
-            const fullPromptSent = `${systemPrompt}\n\nUSER QUESTION: ${question}`;
+            // Only log the chat message if user opted in to data collection
+            if (storeMessage === true) {
+                // Build the full prompt that was sent to the model
+                const fullPromptSent = `${systemPrompt}\n\nUSER QUESTION: ${question}`;
 
-            try {
-                await ctx.runMutation(internal.chat.logChatMessage, {
-                    fullPrompt: fullPromptSent,
-                    userQuestion: question,
-                    modelResponse: answer,
-                    focusName,
-                    userEmail,
-                    model,
-                    tabCount,
-                });
-            } catch (logErr) {
-                console.warn('Failed to log chat message:', logErr);
-                // Don't fail the request if logging fails
+                try {
+                    await ctx.runMutation(internal.chat.logChatMessage, {
+                        fullPrompt: fullPromptSent,
+                        userQuestion: question,
+                        modelResponse: answer,
+                        focusName,
+                        userEmail,
+                        model,
+                        tabCount,
+                    });
+                } catch (logErr) {
+                    console.warn('Failed to log chat message:', logErr);
+                    // Don't fail the request if logging fails
+                }
             }
 
             return { answer };

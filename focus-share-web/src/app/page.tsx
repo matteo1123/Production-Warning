@@ -132,6 +132,15 @@ export default function Home() {
 
       {/* Footer */}
       < footer className="border-t border-zinc-800 py-6 text-center text-sm text-zinc-500" >
+        <div className="flex items-center justify-center gap-4 mb-2">
+          <Link href="/suggestions" className="hover:text-amber-400 transition-colors">
+            💡 Suggestions
+          </Link>
+          <span>•</span>
+          <a href="#get-extension" className="hover:text-amber-400 transition-colors">
+            Get Extension
+          </a>
+        </div>
         <p>Powered by PW Focus</p>
       </footer >
     </div >

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Welcome to PW Focus</title>
+    <link rel="stylesheet" href="styles/focus.css">
+    <style>
+        body {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .welcome-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .welcome-header img {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 15px;
+        }
+
+        .welcome-header h1 {
+            color: #ffd700;
+            margin: 0 0 10px 0;
+        }
+
+        .welcome-header p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .info-section {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .info-section h2 {
+            color: #ffd700;
+            font-size: 16px;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .info-section ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #ccc;
+        }
+
+        .info-section li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .consent-section {
+            background: #1a2a1a;
+            border: 1px solid #4a4;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .consent-section h2 {
+            color: #6c6;
+            font-size: 16px;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .consent-section p {
+            color: #aaa;
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 0 0 15px 0;
+        }
+
+        .data-list {
+            background: #252525;
+            border-radius: 4px;
+            padding: 12px 15px;
+            margin: 15px 0;
+        }
+
+        .data-list strong {
+            color: #ffd700;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .data-list ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #bbb;
+            font-size: 13px;
+        }
+
+        .data-list li {
+            margin-bottom: 5px;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #ffd700;
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+
+        .btn-primary:hover {
+            background: #ffed4a;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #333;
+            color: #888;
+            border: 1px solid #555;
+        }
+
+        .btn-secondary:hover {
+            background: #444;
+            color: #aaa;
+        }
+
+        .privacy-link {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+        }
+
+        .privacy-link a {
+            color: #888;
+        }
+
+        .privacy-link a:hover {
+            color: #ffd700;
+        }
+
+        .local-note {
+            background: #2a2a30;
+            border-left: 3px solid #ffd700;
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 13px;
+            color: #aaa;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="welcome-header">
+        <img src="icons/icon128.png" alt="PW Focus">
+        <h1>Welcome to PW Focus!</h1>
+        <p>Stay focused with curated links, warnings, and context notes.</p>
+    </div>
+
+    <div class="info-section">
+        <h2>🎯 What You Can Do</h2>
+        <ul>
+            <li><strong>Focus Topics:</strong> Create collections of links for different tasks or projects</li>
+            <li><strong>Quick Links:</strong> Access your focus links from any page via the focus bar</li>
+            <li><strong>Cursor Warnings:</strong> Visual alerts when hovering on production/sensitive sites</li>
+            <li><strong>Context Notes:</strong> Attach notes to specific pages that appear when you visit them</li>
+            <li><strong>AI Chat:</strong> Ask questions about content in your open focus tabs</li>
+        </ul>
+    </div>
+
+    <div class="consent-section">
+        <h2>🔒 Help Us Improve</h2>
+        <p>
+            All PW Focus features work without sending data externally. However, you can help us
+            improve the extension by allowing anonymous usage data collection:
+        </p>
+
+        <div class="data-list">
+            <strong>If you opt in, we may collect:</strong>
+            <ul>
+                <li><strong>Chat interactions:</strong> Anonymous copies of AI chat messages to improve responses</li>
+                <li><strong>Usage patterns:</strong> Which features you use most (no personal data)</li>
+            </ul>
+        </div>
+
+        <div class="local-note">
+            <strong>💡 What stays local:</strong> Your focus configurations, warnings, notes, and browsing data
+            never leave your device. Even with data sharing off, all features work normally.
+        </div>
+
+        <p>
+            Would you like to help improve PW Focus with anonymous usage data?
+            You can always change this later in the Focus Mode Settings.
+        </p>
+
+        <div class="button-row">
+            <button class="btn btn-primary" id="enableBtn">Help Improve PW Focus</button>
+            <button class="btn btn-secondary" id="disableBtn">No Thanks</button>
+        </div>
+    </div>
+
+    <div class="privacy-link">
+        <a href="https://pwfocus.net/privacy" target="_blank">Read our Privacy Policy</a>
+    </div>
+
+    <script>
+        document.getElementById('enableBtn').addEventListener('click', function () {
+            chrome.storage.sync.set({ dataSharingConsent: true }, function () {
+                alert('Thank you! Your anonymous data will help us improve PW Focus. Enjoy!');
+                window.close();
+            });
+        });
+
+        document.getElementById('disableBtn').addEventListener('click', function () {
+            chrome.storage.sync.set({ dataSharingConsent: false }, function () {
+                alert('No problem! All features still work normally. You can opt in anytime in Settings.');
+                window.close();
+            });
+        });
+    </script>
+</body>
+
+</html>

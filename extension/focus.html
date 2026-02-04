@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <link rel="stylesheet" href="styles/focus.css">
 </head>
+
 <body>
     <div class="header">
         <img src="icons/icon32.png" alt="Logo">
         <h2>Focus Mode Settings</h2>
     </div>
-    
+
     <div class="toggle">
         <label>
             <input type="checkbox" id="enableFocus"> Enable Focus Mode
@@ -27,8 +29,28 @@
         <!-- Focus items will be added here dynamically -->
     </div>
 
+    <hr style="border-color: #333; margin: 25px 0;">
+
+    <div class="settings-section" style="margin-bottom: 20px;">
+        <h3 style="color: #ffd700; margin-bottom: 15px;">🔒 Privacy & Data</h3>
+        <label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer;">
+            <input type="checkbox" id="dataSharingEnabled" style="margin-top: 3px;">
+            <div>
+                <strong style="color: #fff;">Help Improve PW Focus</strong>
+                <p style="color: #888; font-size: 12px; margin: 5px 0 0 0;">
+                    Allow anonymous usage data to help us improve the extension.
+                    Chat messages and interactions may be stored for analysis.
+                    All data is anonymous and never tied to your identity.
+                    You can opt out at any time.
+                    <a href="https://pwfocus.net/privacy" target="_blank" style="color: #ffd700;">Privacy Policy</a>
+                </p>
+            </div>
+        </label>
+    </div>
+
     <button id="save">Save Focus Mode Settings</button>
 
     <script type="module" src="focus.js"></script>
 </body>
-</html> 
+
+</html>

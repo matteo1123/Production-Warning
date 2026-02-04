@@ -64,26 +64,68 @@ document.addEventListener('DOMContentLoaded', function () {
     /**
      * Creates a new link pair input group
      * @param {HTMLElement} container - Container to add the link pair to
-     * @param {Object} existing - Existing link data {key: string, value: string}
+     * @param {Object} existing - Existing link data {key: string, value: string, context: string}
      */
-    function addLinkPair(container, existing = { key: '', value: '' }) {
+    function addLinkPair(container, existing = { key: '', value: '', context: '' }) {
         if (container.querySelectorAll('.link-pair').length >= MAX_LINKS) return;
 
         // Create container for link pair
         const pair = document.createElement('div');
         pair.className = 'link-pair';
+        pair.draggable = true;
+        pair.style.cssText = 'position: relative; padding: 8px; margin-bottom: 8px; background: #252525; border-radius: 6px; border: 1px solid #333;';
+
+        // Add drag handle
+        const dragHandle = document.createElement('div');
+        dragHandle.className = 'drag-handle';
+        dragHandle.innerHTML = '⋮⋮';
+        dragHandle.title = 'Drag to reorder';
+        dragHandle.style.cssText = 'position: absolute; left: 4px; top: 50%; transform: translateY(-50%); cursor: grab; color: #666; font-size: 14px; user-select: none;';
 
         // Create input for link text
         const keyInput = document.createElement('input');
         keyInput.type = 'text';
         keyInput.placeholder = 'Link Text';
         keyInput.value = existing.key;
+        keyInput.className = 'link-key';
 
         // Create input for URL
         const valueInput = document.createElement('input');
         valueInput.type = 'text';
         valueInput.placeholder = 'URL';
         valueInput.value = existing.value;
+        valueInput.className = 'link-value';
+
+        // Create move buttons
+        const moveContainer = document.createElement('div');
+        moveContainer.style.cssText = 'display: flex; flex-direction: column; gap: 2px;';
+
+        const moveUpBtn = document.createElement('button');
+        moveUpBtn.textContent = '▲';
+        moveUpBtn.type = 'button';
+        moveUpBtn.title = 'Move up';
+        moveUpBtn.style.cssText = 'padding: 2px 6px; font-size: 10px; background: #333; border: 1px solid #444; color: #888; cursor: pointer; border-radius: 3px;';
+        moveUpBtn.onclick = () => {
+            const prev = pair.previousElementSibling;
+            if (prev && prev.classList.contains('link-pair')) {
+                container.insertBefore(pair, prev);
+            }
+        };
+
+        const moveDownBtn = document.createElement('button');
+        moveDownBtn.textContent = '▼';
+        moveDownBtn.type = 'button';
+        moveDownBtn.title = 'Move down';
+        moveDownBtn.style.cssText = 'padding: 2px 6px; font-size: 10px; background: #333; border: 1px solid #444; color: #888; cursor: pointer; border-radius: 3px;';
+        moveDownBtn.onclick = () => {
+            const next = pair.nextElementSibling;
+            if (next && next.classList.contains('link-pair')) {
+                container.insertBefore(next, pair);
+            }
+        };
+
+        moveContainer.appendChild(moveUpBtn);
+        moveContainer.appendChild(moveDownBtn);
 
         // Create remove button
         const removeBtn = document.createElement('button');
@@ -100,14 +142,28 @@ document.addEventListener('DOMContentLoaded', function () {
                 'Add a new link';
         };
 
-        // Assemble the link pair
+        // Assemble the link pair - main row
         const pairContainer = document.createElement('div');
-        pairContainer.style.display = 'flex';
-        pairContainer.style.gap = '8px';
-        pairContainer.style.width = '100%';
+        pairContainer.style.cssText = 'display: flex; gap: 8px; width: 100%; padding-left: 20px;';
         pairContainer.appendChild(keyInput);
         pairContainer.appendChild(valueInput);
+        pairContainer.appendChild(moveContainer);
         pairContainer.appendChild(removeBtn);
+
+        // Context label row - NEW
+        const contextRow = document.createElement('div');
+        contextRow.style.cssText = 'margin-top: 6px; padding-left: 20px;';
+
+        const contextInput = document.createElement('input');
+        contextInput.type = 'text';
+        contextInput.className = 'link-context';
+        contextInput.placeholder = 'Context for AI (e.g., "Main documentation", "Example code", "Problem description")';
+        contextInput.value = existing.context || '';
+        contextInput.style.cssText = 'width: 100%; padding: 6px 8px; background: #1a1a1a; border: 1px solid #444; border-radius: 4px; color: #aaa; font-size: 11px;';
+
+        contextRow.appendChild(contextInput);
+
+        pair.appendChild(dragHandle);
 
         // Warning controls for this link
         const warningContainer = document.createElement('div');
@@ -187,6 +243,7 @@ document.addEventListener('DOMContentLoaded', function () {
         warningContainer.appendChild(selectorInput);
 
         pair.appendChild(pairContainer);
+        pair.appendChild(contextRow);
         pair.appendChild(warningToggle);
         pair.appendChild(warningContainer);
 
@@ -268,12 +325,21 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     </div>
                     <div style="margin-bottom: 10px;">
-                        <label style="display: block; margin-bottom: 4px; font-size: 11px; color: #888;">URL Regex (when to show):</label>
-                        <input type="text" class="warning-url-regex" value="${focus.warning?.urlRegex || '.*'}" placeholder=".*" style="width: 100%; padding: 6px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                        <label style="display: block; margin-bottom: 4px; font-size: 11px; color: #888;">URL Pattern (glob: * matches any, ? matches one char):</label>
+                        <input type="text" class="warning-url-regex" value="${focus.warning?.urlRegex || '*'}" placeholder="*salesforce*" style="width: 100%; padding: 6px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff;">
                     </div>
-                    <div>
+                    <div style="margin-bottom: 10px;">
                         <label style="display: block; margin-bottom: 4px; font-size: 11px; color: #888;">Element Regex (which tags):</label>
                         <input type="text" class="warning-element-regex" value="${focus.warning?.elementRegex || '.*'}" placeholder="button|a|input" style="width: 100%; padding: 6px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                    </div>
+                    <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #333;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #ff6b6b;">
+                            <input type="checkbox" class="warning-exclude-context" ${focus.warning?.excludeFromContext ? 'checked' : ''}>
+                            🚫 Exclude matching URLs from AI context
+                        </label>
+                        <small style="color: #888; display: block; margin-top: 4px; margin-left: 24px;">
+                            When checked, pages matching the URL pattern above won't be sent to AI chat.
+                        </small>
                     </div>
                 </div>
             </div>
@@ -313,10 +379,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const notesSection = document.createElement('div');
         notesSection.className = 'notes-section';
         notesSection.innerHTML = `
-            <div class="section-header" style="cursor: pointer; display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 8px; background: #1a1a1a; border-radius: 4px;">
+            < div class="section-header" style = "cursor: pointer; display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 8px; background: #1a1a1a; border-radius: 4px;" >
                 <span class="collapse-icon">▶</span>
                 <span>📝 Context Notes (shared)</span>
-            </div>
+            </div >
             <div class="section-content" style="display: none; padding: 12px; background: #252525; border-radius: 0 0 4px 4px; margin-top: -4px;">
                 <div class="notes-list"></div>
                 <button class="add-note-btn" style="margin-top: 8px; padding: 6px 12px; background: #2a2a2a; border: 1px solid #444; color: #ffd700; border-radius: 4px; cursor: pointer;">+ Add Note</button>
@@ -374,6 +440,13 @@ document.addEventListener('DOMContentLoaded', function () {
         shareBtn.className = 'share-btn';
         shareBtn.style.backgroundColor = '#1a1a1a';
         shareBtn.onclick = async () => {
+            // Check data sharing consent first
+            const { dataSharingConsent } = await chrome.storage.sync.get(['dataSharingConsent']);
+            if (dataSharingConsent !== true) {
+                alert('Data sharing is disabled. Enable "AI Chat & Focus Sharing" in the Privacy & Data section below to share focuses.');
+                return;
+            }
+
             // Build full focus object for sharing
             const focusData = collectFocusData(focusItem);
 
@@ -466,17 +539,16 @@ document.addEventListener('DOMContentLoaded', function () {
      * Collects all data from a focus item element
      */
     function collectFocusData(focusItem) {
-        // Collect links
+        // Collect links - order is preserved from DOM (top to bottom)
         const links = [];
         focusItem.querySelectorAll('.link-pair').forEach(pair => {
-            const inputs = pair.getElementsByTagName('input');
-            // inputs[0] is Link Text, inputs[1] is URL, inputs[2] shows up if we check for it inside warning container but let's be safe
-            // Let's select specifically by class
-            const key = pair.querySelector('input[placeholder="Link Text"]')?.value;
-            const value = pair.querySelector('input[placeholder="URL"]')?.value;
+            // Use class selectors for reliability
+            const key = pair.querySelector('.link-key')?.value || pair.querySelector('input[placeholder="Link Text"]')?.value;
+            const value = pair.querySelector('.link-value')?.value || pair.querySelector('input[placeholder="URL"]')?.value;
+            const context = pair.querySelector('.link-context')?.value || '';
 
             if (key && value) {
-                let linkData = { key, value };
+                let linkData = { key, value, context };
 
                 if (pair.querySelector('.link-warning-enabled')) {
                     const isEnabled = pair.querySelector('.link-warning-enabled').checked;
@@ -491,7 +563,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 } else {
                     // Fallback for transition or errors
-                    const isWarningActive = pair.querySelector('.link-warning-controls').style.display !== 'none';
+                    const warningControls = pair.querySelector('.link-warning-controls');
+                    const isWarningActive = warningControls && warningControls.style.display !== 'none';
                     if (isWarningActive) {
                         const emblem = pair.querySelector('.link-warning-emblem').value;
                         const selector = pair.querySelector('.link-warning-selector').value;
@@ -508,11 +581,13 @@ document.addEventListener('DOMContentLoaded', function () {
         // Collect warning settings
         const warningEnabled = focusItem.querySelector('.warning-enabled')?.checked || false;
         const selectedEmblem = focusItem.querySelector('.emblem-opt.selected');
+        const excludeFromContext = focusItem.querySelector('.warning-exclude-context')?.checked || false;
         const warning = {
             enabled: warningEnabled,
             emblem: selectedEmblem?.dataset.emblem || 'production',
-            urlRegex: focusItem.querySelector('.warning-url-regex')?.value || '.*',
-            elementRegex: focusItem.querySelector('.warning-element-regex')?.value || '.*'
+            urlRegex: focusItem.querySelector('.warning-url-regex')?.value || '*',
+            elementRegex: focusItem.querySelector('.warning-element-regex')?.value || '.*',
+            excludeFromContext: excludeFromContext
         };
 
         // Collect context notes
@@ -554,6 +629,19 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         updateAddFocusButton();
     });
+
+    // Load data sharing consent preference
+    const dataSharingCheckbox = document.getElementById('dataSharingEnabled');
+    if (dataSharingCheckbox) {
+        chrome.storage.sync.get(['dataSharingConsent'], function (result) {
+            dataSharingCheckbox.checked = result.dataSharingConsent === true;
+        });
+
+        // Save data sharing preference when changed
+        dataSharingCheckbox.addEventListener('change', function () {
+            chrome.storage.sync.set({ dataSharingConsent: dataSharingCheckbox.checked });
+        });
+    }
 
     // Add handler for adding new focus items
     addFocusBtn.addEventListener('click', () => {

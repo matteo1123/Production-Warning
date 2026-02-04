@@ -87,4 +87,22 @@ export default defineSchema({
     })
         .index("by_created", ["createdAt"])
         .index("by_user", ["userEmail"]),
+
+    // User suggestions/feedback
+    suggestions: defineTable({
+        // Type of suggestion: "feature", "bug", "improvement", "other"
+        type: v.string(),
+        // The suggestion content
+        content: v.string(),
+        // Optional email for follow-up
+        email: v.optional(v.string()),
+        // Status: "new", "reviewed", "planned", "completed", "declined"
+        status: v.string(),
+        // Admin notes (internal)
+        adminNotes: v.optional(v.string()),
+        // Timestamps
+        createdAt: v.number(),
+    })
+        .index("by_created", ["createdAt"])
+        .index("by_status", ["status"]),
 });

@@ -336,9 +336,126 @@ if (window === window.top) {
     `;
     contextNotesBtn.appendChild(notificationDot);
 
+    // Share button
+    const shareBtn = document.createElement('div');
+    shareBtn.style.cssText = `
+        width: 24px;
+        height: 24px;
+        background-color: #2a2a2a;
+        border: 2px solid #ffd700;
+        border-radius: 50%;
+        color: #ffd700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.3s ease;
+        line-height: 1;
+        pointer-events: auto;
+    `;
+    shareBtn.innerHTML = '🔗';
+    shareBtn.title = 'Share this focus';
+
+    shareBtn.addEventListener('mouseover', function () {
+        this.style.backgroundColor = '#ffd700';
+        this.style.color = '#1a1a1a';
+    });
+    shareBtn.addEventListener('mouseout', function () {
+        this.style.backgroundColor = '#2a2a2a';
+        this.style.color = '#ffd700';
+    });
+
+    // Share button click handler
+    shareBtn.addEventListener('click', async function () {
+        const originalIcon = shareBtn.innerHTML;
+        shareBtn.innerHTML = '⏳';
+        shareBtn.style.pointerEvents = 'none';
+
+        try {
+            const { focusMode } = await chrome.storage.sync.get(['focusMode']);
+            const activeFocus = focusMode?.focuses?.find(f => f.active);
+
+            if (!activeFocus) {
+                alert('No active focus to share');
+                return;
+            }
+
+            // Prepare focus data for sharing
+            const shareData = {
+                name: activeFocus.name,
+                description: activeFocus.description || '',
+                links: activeFocus.links || [],
+                cursorWarning: activeFocus.cursorWarning || null,
+                contextNotes: activeFocus.contextNotes || []
+            };
+
+            // Call the share API
+            const response = await fetch('https://pwfocus.net/api/share', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(shareData)
+            });
+
+            if (response.ok) {
+                const { shareId } = await response.json();
+                const shareUrl = `https://pwfocus.net/f/${shareId}`;
+                await navigator.clipboard.writeText(shareUrl);
+                shareBtn.innerHTML = '✅';
+                setTimeout(() => { shareBtn.innerHTML = originalIcon; }, 2000);
+                alert(`Share link copied: ${shareUrl}`);
+            } else {
+                throw new Error('Failed to share');
+            }
+        } catch (error) {
+            console.error('Share error:', error);
+            shareBtn.innerHTML = '❌';
+            setTimeout(() => { shareBtn.innerHTML = originalIcon; }, 2000);
+            alert('Failed to share focus. Please try again.');
+        } finally {
+            shareBtn.style.pointerEvents = 'auto';
+        }
+    });
+
+    // Settings button (go to focus page)
+    const settingsBtn = document.createElement('div');
+    settingsBtn.style.cssText = `
+        width: 24px;
+        height: 24px;
+        background-color: #2a2a2a;
+        border: 2px solid #ffd700;
+        border-radius: 50%;
+        color: #ffd700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 12px;
+        transition: all 0.3s ease;
+        line-height: 1;
+        pointer-events: auto;
+    `;
+    settingsBtn.innerHTML = '⚙️';
+    settingsBtn.title = 'Open Focus Settings';
+
+    settingsBtn.addEventListener('mouseover', function () {
+        this.style.backgroundColor = '#ffd700';
+        this.style.color = '#1a1a1a';
+    });
+    settingsBtn.addEventListener('mouseout', function () {
+        this.style.backgroundColor = '#2a2a2a';
+        this.style.color = '#ffd700';
+    });
+
+    settingsBtn.addEventListener('click', function () {
+        chrome.runtime.sendMessage({ type: 'OPEN_FOCUS_PAGE' });
+    });
+
     // Add buttons to container
+    rightButtonContainer.appendChild(shareBtn);
     rightButtonContainer.appendChild(chatBtn);
     rightButtonContainer.appendChild(contextNotesBtn);
+    rightButtonContainer.appendChild(settingsBtn);
     focusBar.appendChild(rightButtonContainer);
 
     // Create notes popup
@@ -555,7 +672,36 @@ if (window === window.top) {
         chatSendBtn.style.boxShadow = 'none';
     });
 
+    // Copy Context button
+    const copyContextBtn = document.createElement('button');
+    copyContextBtn.style.cssText = `
+        background: #2a2a2a;
+        border: 1px solid #ffd700;
+        border-radius: 8px;
+        color: #ffd700;
+        padding: 10px 12px;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+    `;
+    copyContextBtn.innerHTML = '📋 Copy';
+    copyContextBtn.title = 'Copy extracted context to clipboard (use with other AI tools)';
+    copyContextBtn.addEventListener('mouseover', () => {
+        copyContextBtn.style.backgroundColor = '#3a3a3a';
+        copyContextBtn.style.borderColor = '#ffdd44';
+    });
+    copyContextBtn.addEventListener('mouseout', () => {
+        copyContextBtn.style.backgroundColor = '#2a2a2a';
+        copyContextBtn.style.borderColor = '#ffd700';
+    });
+
     chatInputContainer.appendChild(chatInput);
+    chatInputContainer.appendChild(copyContextBtn);
     chatInputContainer.appendChild(chatSendBtn);
     chatInputArea.appendChild(chatInputContainer);
     chatPopup.appendChild(chatInputArea);
@@ -620,6 +766,44 @@ if (window === window.top) {
     });
 
     chatSendBtn.addEventListener('click', sendChatMessage);
+
+    // Copy context button handler
+    copyContextBtn.addEventListener('click', async () => {
+        const originalText = copyContextBtn.innerHTML;
+        copyContextBtn.innerHTML = '⏳ Extracting...';
+        copyContextBtn.disabled = true;
+        copyContextBtn.style.opacity = '0.7';
+
+        try {
+            const response = await chrome.runtime.sendMessage({
+                type: 'COPY_FOCUS_CONTEXT'
+            });
+
+            if (response && response.error) {
+                addChatMessage(`Error: ${response.error}`, false);
+                copyContextBtn.innerHTML = originalText;
+            } else if (response && response.content) {
+                // Copy to clipboard
+                await navigator.clipboard.writeText(response.content);
+
+                copyContextBtn.innerHTML = '✅ Copied!';
+                addChatMessage(`📋 Context from ${response.sourceCount} source(s) copied to clipboard! You can now paste it into any AI chat.`, false);
+
+                setTimeout(() => {
+                    copyContextBtn.innerHTML = originalText;
+                }, 2000);
+            } else {
+                addChatMessage('Failed to extract context. Please try again.', false);
+                copyContextBtn.innerHTML = originalText;
+            }
+        } catch (error) {
+            addChatMessage(`Error: ${error.message || 'Failed to copy context'}`, false);
+            copyContextBtn.innerHTML = originalText;
+        } finally {
+            copyContextBtn.disabled = false;
+            copyContextBtn.style.opacity = '1';
+        }
+    });
 
     // Function to add message to chat
     function addChatMessage(content, isUser = false) {
@@ -980,16 +1164,25 @@ if (window === window.top) {
                     url = 'https://' + url;
                 }
                 link.href = url;
-                link.textContent = key;
+                // Truncate label to 15 chars max
+                const maxLen = 15;
+                const displayLabel = key.length > maxLen ? key.substring(0, maxLen) + '…' : key;
+                link.textContent = displayLabel;
+                link.title = key; // Full label on hover
                 link.style.cssText = `
                     color: #ffd700;
                     text-decoration: none;
-                    padding: 6px 12px;
+                    padding: 6px 10px;
                     border-radius: 4px;
                     background-color: #2a2a2a;
                     border: 1px solid #ffd700;
                     transition: all 0.3s ease;
-                    margin: 0 4px;
+                    margin: 0 3px;
+                    font-size: 13px;
+                    white-space: nowrap;
+                    max-width: 120px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
                 `;
                 link.addEventListener('mouseover', function () {
                     this.style.backgroundColor = '#cc0000';
