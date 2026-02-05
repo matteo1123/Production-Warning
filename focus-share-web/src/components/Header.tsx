@@ -1,28 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
-
-// Check if Clerk is configured
-const isClerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
-// Dynamic imports for Clerk components - only loaded when Clerk is configured
-const SignInButton = dynamic(
-    () => import('@clerk/nextjs').then((mod) => mod.SignInButton),
-    { ssr: false }
-);
-const SignedIn = dynamic(
-    () => import('@clerk/nextjs').then((mod) => mod.SignedIn),
-    { ssr: false }
-);
-const SignedOut = dynamic(
-    () => import('@clerk/nextjs').then((mod) => mod.SignedOut),
-    { ssr: false }
-);
-const UserButton = dynamic(
-    () => import('@clerk/nextjs').then((mod) => mod.UserButton),
-    { ssr: false }
-);
+import {
+    SignInButton,
+    SignUpButton,
+    SignedIn,
+    SignedOut,
+    UserButton,
+} from '@clerk/nextjs';
 
 export function Header() {
     return (
@@ -41,39 +26,27 @@ export function Header() {
                         Suggestions
                     </Link>
 
-                    {isClerkConfigured ? (
-                        <>
-                            <SignedOut>
-                                <SignInButton mode="modal">
-                                    <button className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-900 font-medium rounded-lg text-sm transition-colors">
-                                        Sign In
-                                    </button>
-                                </SignInButton>
-                            </SignedOut>
+                    <SignedOut>
+                        <SignInButton mode="modal">
+                            <button className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-900 font-medium rounded-lg text-sm transition-colors">
+                                Sign In
+                            </button>
+                        </SignInButton>
+                    </SignedOut>
 
-                            <SignedIn>
-                                <UserButton
-                                    afterSignOutUrl="/"
-                                    appearance={{
-                                        elements: {
-                                            avatarBox: "w-9 h-9"
-                                        }
-                                    }}
-                                />
-                            </SignedIn>
-                        </>
-                    ) : (
-                        <a
-                            href="https://chromewebstore.google.com/detail/production-warning/gijcnlfiljejcgbcjnkpnbefjngcgapd"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-900 font-medium rounded-lg text-sm transition-colors"
-                        >
-                            Get Extension
-                        </a>
-                    )}
+                    <SignedIn>
+                        <UserButton
+                            afterSignOutUrl="/"
+                            appearance={{
+                                elements: {
+                                    avatarBox: "w-9 h-9"
+                                }
+                            }}
+                        />
+                    </SignedIn>
                 </nav>
             </div>
         </header>
     );
 }
+

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ConvexClientProvider } from "./ConvexClientProvider";
-import { ClerkWrapper } from "@/components/ClerkWrapper";
+import { ClerkProvider } from "@clerk/nextjs";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,15 +25,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-950 text-white`}
-        suppressHydrationWarning
-      >
-        <ClerkWrapper>
+    <ClerkProvider>
+      <html lang="en" className="dark" suppressHydrationWarning>
+        <body
+          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-950 text-white`}
+          suppressHydrationWarning
+        >
           <ConvexClientProvider>{children}</ConvexClientProvider>
-        </ClerkWrapper>
-      </body>
-    </html>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
+
