@@ -7,9 +7,12 @@ const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
 
 // Model selection based on tier
 const MODELS = {
-    free: 'gemini-2.0-flash-lite',
-    premium: 'gemini-2.0-flash'
+    free: 'gemini-2.0-flash',
+    premium: 'gemini-2.0-flash',
+    admin: 'gemini-3-flash'  // Latest Gemini 3.0 Flash model
 };
+
+
 
 // Initialize Convex client
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);

@@ -108,6 +108,15 @@ export const getUserTier = query({
             return { tier: "free", isPremium: false };
         }
 
+        // Admin tier takes priority - no subscription check needed
+        if (user.tier === "admin") {
+            return {
+                tier: "admin",
+                isPremium: true,
+                subscriptionStatus: "active",
+            };
+        }
+
         // Check if premium subscription is still active
         const isPremium = user.tier === "premium" &&
             (user.subscriptionStatus === "active" ||
@@ -120,6 +129,7 @@ export const getUserTier = query({
         };
     },
 });
+
 
 // Increment chat query count and check limits
 export const incrementChatUsage = mutation({
@@ -149,9 +159,11 @@ export const incrementChatUsage = mutation({
 
         // Check limits based on tier
         const limits = {
-            free: 20,      // 20 queries per month for free
-            premium: 1000, // 1000 queries per month for premium
+            free: 20,       // 20 queries per month for free
+            premium: 1000,  // 1000 queries per month for premium
+            admin: 999999,  // Essentially unlimited for admin
         };
+
 
         const limit = limits[user.tier as keyof typeof limits] || limits.free;
 
