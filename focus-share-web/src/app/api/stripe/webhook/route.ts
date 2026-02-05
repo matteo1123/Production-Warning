@@ -3,16 +3,25 @@ import Stripe from 'stripe';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../../convex/_generated/api';
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2026-01-28.clover',
-});
+// Lazy initialization to avoid build-time errors
+let stripe: Stripe | null = null;
+let convex: ConvexHttpClient | null = null;
 
-// Initialize Convex client
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+function getStripe(): Stripe {
+    if (!stripe) {
+        stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+            apiVersion: '2026-01-28.clover',
+        });
+    }
+    return stripe;
+}
 
-// Stripe webhook secret
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+function getConvex(): ConvexHttpClient {
+    if (!convex) {
+        convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+    }
+    return convex;
+}
 
 export async function POST(request: NextRequest) {
     const body = await request.text();
@@ -22,10 +31,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'No signature' }, { status: 400 });
     }
 
+    const stripeClient = getStripe();
+    const convexClient = getConvex();
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+
     let event: Stripe.Event;
 
     try {
-        event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
+        event = stripeClient.webhooks.constructEvent(body, sig, endpointSecret);
     } catch (err) {
         console.error('Webhook signature verification failed:', err);
         return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
@@ -38,7 +51,7 @@ export async function POST(request: NextRequest) {
             const email = session.customer_email || session.metadata?.user_email;
 
             if (email) {
-                await convex.mutation(api.users.updateSubscription, {
+                await convexClient.mutation(api.users.updateSubscription, {
                     email,
                     tier: 'premium',
                     stripeCustomerId: session.customer as string,
@@ -55,7 +68,7 @@ export async function POST(request: NextRequest) {
             const customerId = subscription.customer as string;
 
             // Get user by customer ID
-            const user = await convex.query(api.users.getUserByStripeCustomerId, {
+            const user = await convexClient.query(api.users.getUserByStripeCustomerId, {
                 stripeCustomerId: customerId,
             });
 
@@ -63,7 +76,7 @@ export async function POST(request: NextRequest) {
                 const status = subscription.status;
                 const tier = status === 'active' ? 'premium' : 'free';
 
-                await convex.mutation(api.users.updateSubscription, {
+                await convexClient.mutation(api.users.updateSubscription, {
                     email: user.email,
                     tier,
                     subscriptionStatus: status,
@@ -78,12 +91,12 @@ export async function POST(request: NextRequest) {
             const subscription = event.data.object as Stripe.Subscription;
             const customerId = subscription.customer as string;
 
-            const user = await convex.query(api.users.getUserByStripeCustomerId, {
+            const user = await convexClient.query(api.users.getUserByStripeCustomerId, {
                 stripeCustomerId: customerId,
             });
 
             if (user) {
-                await convex.mutation(api.users.updateSubscription, {
+                await convexClient.mutation(api.users.updateSubscription, {
                     email: user.email,
                     tier: 'free',
                     subscriptionStatus: 'canceled',
@@ -98,12 +111,12 @@ export async function POST(request: NextRequest) {
             const invoice = event.data.object as Stripe.Invoice;
             const customerId = invoice.customer as string;
 
-            const user = await convex.query(api.users.getUserByStripeCustomerId, {
+            const user = await convexClient.query(api.users.getUserByStripeCustomerId, {
                 stripeCustomerId: customerId,
             });
 
             if (user) {
-                await convex.mutation(api.users.updateSubscription, {
+                await convexClient.mutation(api.users.updateSubscription, {
                     email: user.email,
                     tier: user.tier, // Keep current tier
                     subscriptionStatus: 'past_due',

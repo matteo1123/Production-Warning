@@ -1,10 +1,28 @@
 'use client';
 
-import { SignInButton, SignedIn, SignedOut, UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 
 // Check if Clerk is configured
 const isClerkConfigured = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
+// Dynamic imports for Clerk components - only loaded when Clerk is configured
+const SignInButton = dynamic(
+    () => import('@clerk/nextjs').then((mod) => mod.SignInButton),
+    { ssr: false }
+);
+const SignedIn = dynamic(
+    () => import('@clerk/nextjs').then((mod) => mod.SignedIn),
+    { ssr: false }
+);
+const SignedOut = dynamic(
+    () => import('@clerk/nextjs').then((mod) => mod.SignedOut),
+    { ssr: false }
+);
+const UserButton = dynamic(
+    () => import('@clerk/nextjs').then((mod) => mod.UserButton),
+    { ssr: false }
+);
 
 export function Header() {
     return (

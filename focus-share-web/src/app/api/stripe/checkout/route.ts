@@ -3,16 +3,25 @@ import Stripe from 'stripe';
 import { ConvexHttpClient } from 'convex/browser';
 import { api } from '../../../../../convex/_generated/api';
 
-// Initialize Stripe
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2026-01-28.clover',
-});
+// Lazy initialization to avoid build-time errors
+let stripe: Stripe | null = null;
+let convex: ConvexHttpClient | null = null;
 
-// Initialize Convex client
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+function getStripe(): Stripe {
+    if (!stripe) {
+        stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+            apiVersion: '2026-01-28.clover',
+        });
+    }
+    return stripe;
+}
 
-// Premium subscription price
-const PREMIUM_PRICE_ID = process.env.STRIPE_PREMIUM_PRICE_ID!;
+function getConvex(): ConvexHttpClient {
+    if (!convex) {
+        convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+    }
+    return convex;
+}
 
 export async function POST(request: NextRequest) {
     try {
@@ -26,11 +35,17 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        const stripeClient = getStripe();
+        const convexClient = getConvex();
+
+        // Premium subscription price
+        const PREMIUM_PRICE_ID = process.env.STRIPE_PREMIUM_PRICE_ID!;
+
         // Ensure user exists in our database
-        await convex.mutation(api.users.getOrCreateUser, { email, name });
+        await convexClient.mutation(api.users.getOrCreateUser, { email, name });
 
         // Create Stripe checkout session
-        const session = await stripe.checkout.sessions.create({
+        const session = await stripeClient.checkout.sessions.create({
             payment_method_types: ['card'],
             mode: 'subscription',
             customer_email: email,

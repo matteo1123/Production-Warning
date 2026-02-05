@@ -379,10 +379,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const notesSection = document.createElement('div');
         notesSection.className = 'notes-section';
         notesSection.innerHTML = `
-            < div class="section-header" style = "cursor: pointer; display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 8px; background: #1a1a1a; border-radius: 4px;" >
+            <div class="section-header" style="cursor: pointer; display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 8px; background: #1a1a1a; border-radius: 4px;">
                 <span class="collapse-icon">▶</span>
                 <span>📝 Context Notes (shared)</span>
-            </div >
+            </div>
             <div class="section-content" style="display: none; padding: 12px; background: #252525; border-radius: 0 0 4px 4px; margin-top: -4px;">
                 <div class="notes-list"></div>
                 <button class="add-note-btn" style="margin-top: 8px; padding: 6px 12px; background: #2a2a2a; border: 1px solid #444; color: #ffd700; border-radius: 4px; cursor: pointer;">+ Add Note</button>

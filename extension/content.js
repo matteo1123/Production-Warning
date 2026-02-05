@@ -1723,5 +1723,66 @@ if (window === window.top) {
     notesPopup.style.pointerEvents = 'auto';
     chatBtn.style.pointerEvents = 'auto';
     chatPopup.style.pointerEvents = 'auto';
+
+    // Listen for focus mode changes from background script
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.type === 'FOCUS_MODE_CHANGED') {
+            // Refresh focus bar by reloading from storage
+            chrome.storage.sync.get(['focusMode'], function (result) {
+                const focusMode = result.focusMode;
+                if (focusMode && focusMode.enabled) {
+                    const activeFocus = focusMode.focuses?.find(f => f.active);
+                    if (activeFocus) {
+                        // Show the focus bar
+                        focusBar.style.display = 'flex';
+
+                        // Update the focus name
+                        focusText.textContent = activeFocus.name || 'Focus';
+
+                        // Update links
+                        // Clear existing links except action buttons
+                        Array.from(linksContainer.children).forEach(child => {
+                            if (!child.classList.contains('focus-action-btn')) {
+                                child.remove();
+                            }
+                        });
+
+                        // Add new links
+                        if (activeFocus.links) {
+                            const maxLabelLen = 20;
+                            activeFocus.links.forEach(link => {
+                                const linkEl = document.createElement('a');
+                                linkEl.href = link.value;
+                                linkEl.target = '_blank';
+                                const fullLabel = link.key || link.value;
+                                const truncated = fullLabel.length > maxLabelLen
+                                    ? fullLabel.slice(0, maxLabelLen - 1) + '…'
+                                    : fullLabel;
+                                linkEl.textContent = truncated;
+                                if (fullLabel.length > maxLabelLen) {
+                                    linkEl.title = fullLabel;
+                                }
+                                linkEl.style.cssText = `
+                                    color: #ffd700;
+                                    text-decoration: none;
+                                    margin: 0 4px;
+                                    padding: 3px 6px;
+                                    border-radius: 3px;
+                                    background: #333;
+                                    font-size: 11px;
+                                    transition: opacity 0.2s;
+                                    pointer-events: auto;
+                                `;
+                                linksContainer.insertBefore(linkEl, linksContainer.querySelector('.focus-action-btn'));
+                            });
+                        }
+
+                        sendResponse({ success: true });
+                    }
+                }
+            });
+            return true; // Keep channel open for async
+        }
+    });
 }
 

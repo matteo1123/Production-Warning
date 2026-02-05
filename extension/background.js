@@ -163,14 +163,22 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
             return;
           }
 
-          // Add new focus
+          // Deactivate all existing focuses
+          focusMode.focuses.forEach(f => f.active = false);
+
+          // Add new focus and set it as active
           const newFocus = {
             name: focusName.trim(),
             links: links,
-            active: false
+            active: true,
+            warning: { enabled: false, emblem: 'production', elementRegex: '.*', urlRegex: '*' },
+            contextNotes: []
           };
 
           focusMode.focuses.push(newFocus);
+
+          // Enable focus mode
+          focusMode.enabled = true;
 
           // Save updated focus mode data
           chrome.storage.sync.set({ focusMode }, () => {
@@ -181,6 +189,15 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
             setTimeout(() => {
               chrome.action.setBadgeText({ text: "" });
             }, 2000);
+
+            // Inject focus bar in all tabs
+            chrome.tabs.query({}, (allTabs) => {
+              allTabs.forEach(t => {
+                if (t.url && !t.url.startsWith('chrome://') && !t.url.startsWith('chrome-extension://')) {
+                  chrome.tabs.sendMessage(t.id, { type: 'FOCUS_MODE_CHANGED' }).catch(() => { });
+                }
+              });
+            });
           });
         });
       }).catch(err => {
