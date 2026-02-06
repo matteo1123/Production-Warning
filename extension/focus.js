@@ -440,12 +440,6 @@ document.addEventListener('DOMContentLoaded', function () {
         shareBtn.className = 'share-btn';
         shareBtn.style.backgroundColor = '#1a1a1a';
         shareBtn.onclick = async () => {
-            // Check data sharing consent first
-            const { dataSharingConsent } = await chrome.storage.sync.get(['dataSharingConsent']);
-            if (dataSharingConsent !== true) {
-                alert('Data sharing is disabled. Enable "AI Chat & Focus Sharing" in the Privacy & Data section below to share focuses.');
-                return;
-            }
 
             // Build full focus object for sharing
             const focusData = collectFocusData(focusItem);
