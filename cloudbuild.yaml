@@ -50,7 +50,7 @@ images:
 # Substitution variables (set these in Cloud Build trigger settings)
 substitutions:
   _REGION: 'us-central1'
-  _CONVEX_URL: 'https://strong-ferret-346.convex.cloud'
+  _CONVEX_URL: 'https://useful-marlin-814.convex.cloud'
   _STRIPE_SECRET_KEY: ''   # Set in Cloud Build trigger
   _STRIPE_WEBHOOK_SECRET: '' # Set in Cloud Build trigger
   _STRIPE_PREMIUM_PRICE_ID: '' # Set in Cloud Build trigger
