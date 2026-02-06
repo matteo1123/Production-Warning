@@ -10,6 +10,7 @@ export const createShare = mutation({
             v.object({
                 key: v.string(),
                 value: v.string(),
+                context: v.optional(v.string()),
                 warning: v.optional(
                     v.object({
                         enabled: v.boolean(),
