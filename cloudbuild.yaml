@@ -60,3 +60,7 @@ substitutions:
 
 # Build timeout
 timeout: '1200s'
+
+# Logging options (required when using service account)
+options:
+  logging: CLOUD_LOGGING_ONLY
