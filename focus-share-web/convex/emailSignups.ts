@@ -10,34 +10,39 @@ export const signup = mutation({
         email: v.string(),
     },
     handler: async (ctx, args) => {
-        // Validate email format
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(args.email)) {
-            return { success: false, error: "Invalid email address" };
+        try {
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(args.email)) {
+                return { success: false, error: "Invalid email address" };
+            }
+
+            // Normalize email to lowercase
+            const normalizedEmail = args.email.toLowerCase().trim();
+
+            // Check if email already exists
+            const existing = await ctx.db
+                .query("email_signups")
+                .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
+                .first();
+
+            if (existing) {
+                return { success: true, alreadySignedUp: true };
+            }
+
+            // Create the signup entry
+            await ctx.db.insert("email_signups", {
+                email: normalizedEmail,
+                name: "",  // Empty string for name
+                source: "extension_waitlist",
+                notified: false,
+            });
+
+            return { success: true, alreadySignedUp: false };
+        } catch (error) {
+            console.error("Error in signup mutation:", error);
+            throw error;
         }
-
-        // Normalize email to lowercase
-        const normalizedEmail = args.email.toLowerCase().trim();
-
-        // Check if email already exists
-        const existing = await ctx.db
-            .query("email_signups")
-            .withIndex("by_email", (q) => q.eq("email", normalizedEmail))
-            .first();
-
-        if (existing) {
-            return { success: true, alreadySignedUp: true };
-        }
-
-        // Create the signup entry
-        await ctx.db.insert("email_signups", {
-            email: normalizedEmail,
-            source: "extension_waitlist",
-            notified: false,
-            createdAt: Date.now(),
-        });
-
-        return { success: true, alreadySignedUp: false };
     },
 });
 
@@ -49,8 +54,6 @@ export const list = query({
     handler: async (ctx) => {
         const signups = await ctx.db
             .query("email_signups")
-            .withIndex("by_created")
-            .order("desc")
             .collect();
 
         return signups;

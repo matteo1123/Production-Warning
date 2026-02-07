@@ -111,13 +111,12 @@ export default defineSchema({
     email_signups: defineTable({
         // Email address
         email: v.string(),
+        // Name 
+        name: v.string(),
         // Source where they signed up (e.g., "extension_waitlist")
-        source: v.string(),
+        source: v.optional(v.string()),
         // Whether they've been notified
-        notified: v.boolean(),
-        // Timestamps
-        createdAt: v.number(),
+        notified: v.optional(v.boolean()),
     })
-        .index("by_email", ["email"])
-        .index("by_created", ["createdAt"]),
+        .index("by_email", ["email"]),
 });

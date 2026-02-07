@@ -34,8 +34,9 @@ export default function WaitlistPage() {
                 setMessage(result.error || "Something went wrong. Please try again.");
             }
         } catch (error) {
+            console.error("Signup error:", error);
             setStatus("error");
-            setMessage("Something went wrong. Please try again.");
+            setMessage("Something went wrong. Please try again. Check console for details.");
         }
     };
 
