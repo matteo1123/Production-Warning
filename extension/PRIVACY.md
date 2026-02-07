@@ -27,6 +27,16 @@ This data never leaves your device unless you explicitly choose to share a focus
 - **Your question** is transmitted to the AI service
 - **Anonymous usage data** may be collected to improve the service
 
+**Important Limitations:**
+- **No Automatic Access**: PW Focus cannot bypass login screens or authenticate to websites. The extension only extracts text content that is already visible on the page in your browser.
+- **What You See Is What Gets Shared**: If you are logged into a private site (e.g., Salesforce, internal dashboards), the extension can only access the page content visible to you as a logged-in user. This means sensitive data visible on those pages could be included in the chat context.
+
+**Protecting Sensitive Data:**
+Each focus includes a "Cursor Warning" feature that allows you to exclude specific websites from AI chat context:
+- Set a URL pattern (e.g., `*salesforce*`, `*dashboard*`, `*admin*`)
+- Enable "Exclude matching URLs from AI context"
+- Pages matching this pattern will be skipped when extracting content for AI chat
+
 You can opt out of data sharing at any time in the Focus Mode Settings. When disabled, all AI chat processing happens without storing data.
 
 ### Data Shared with Other Users
@@ -47,6 +57,10 @@ We do **NOT** collect:
 - Financial information
 - Personal identifiers (name, email, etc.)
 - Data from websites not in your active focus
+- Cookies or session tokens that would allow us to impersonate you
+
+**Important Clarification on Private Sites:**
+PW Focus **cannot** log into websites on your behalf or access content behind authentication barriers that you haven't already unlocked. The extension only reads text that is currently visible in your browser window. If you are logged into a private site (like Salesforce, Jira, or internal tools), only the content visible to you as an authenticated user can be extracted when you explicitly use the AI chat feature.
 
 ## How We Use Your Information
 
@@ -87,7 +101,17 @@ In accordance with Chrome Web Store requirements:
 | User activity (websites visited) | No | No | N/A |
 | Web browsing history | No | No | N/A |
 | Focus link URLs | Yes (user-created) | Only when sharing | Share focuses between users |
-| Page content | Yes (focus tabs only) | Yes (AI chat only, opt-in) | AI question answering |
+| Page content | Yes (focus tabs only, user-initiated) | Yes (AI chat only, opt-in) | AI question answering |
+| Excluded site patterns | Yes (user-configured) | No | Protect sensitive sites from AI context |
 | Personal information | No | No | N/A |
 | Authentication credentials | No | No | N/A |
 | Financial information | No | No | N/A |
+
+### User Control Over Data Sharing
+
+| Feature | User Control |
+|---------|-------------|
+| AI Chat | Toggle on/off in settings; individual questions require explicit user action |
+| Site Exclusion | Per-focus URL patterns can exclude any site from AI context |
+| Data Storage | Opt-in required; can be disabled anytime |
+| Focus Sharing | Only occurs when user clicks share button |
