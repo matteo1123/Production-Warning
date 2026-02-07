@@ -106,4 +106,18 @@ export default defineSchema({
     })
         .index("by_created", ["createdAt"])
         .index("by_status", ["status"]),
+
+    // Email signup list for extension release notifications
+    email_signups: defineTable({
+        // Email address
+        email: v.string(),
+        // Source where they signed up (e.g., "extension_waitlist")
+        source: v.string(),
+        // Whether they've been notified
+        notified: v.boolean(),
+        // Timestamps
+        createdAt: v.number(),
+    })
+        .index("by_email", ["email"])
+        .index("by_created", ["createdAt"]),
 });

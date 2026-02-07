@@ -20,6 +20,12 @@ export function Header() {
 
                 <nav className="flex items-center gap-4">
                     <Link
+                        href="/waitlist"
+                        className="text-amber-400 hover:text-amber-300 text-sm font-medium transition-colors"
+                    >
+                        Get Extension
+                    </Link>
+                    <Link
                         href="/suggestions"
                         className="text-zinc-400 hover:text-white text-sm transition-colors"
                     >

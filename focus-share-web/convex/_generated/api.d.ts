@@ -9,6 +9,7 @@
  */
 
 import type * as chat from "../chat.js";
+import type * as emailSignups from "../emailSignups.js";
 import type * as shares from "../shares.js";
 import type * as suggestions from "../suggestions.js";
 import type * as users from "../users.js";
@@ -21,6 +22,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   chat: typeof chat;
+  emailSignups: typeof emailSignups;
   shares: typeof shares;
   suggestions: typeof suggestions;
   users: typeof users;

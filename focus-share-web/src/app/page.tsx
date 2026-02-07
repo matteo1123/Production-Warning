@@ -119,19 +119,22 @@ export default function Home() {
               Get PW Focus Extension
             </h3>
             <p className="text-zinc-400 mb-6 max-w-xl mx-auto">
-              Install the browser extension to import focuses directly and create your own curated browsing sessions.
+              The Chrome extension is currently pending review. Join the waitlist to be notified the moment it's available.
             </p>
-            <a
-              href="https://chromewebstore.google.com/detail/production-warning/gijcnlfiljejcgbcjnkpnbefjngcgapd"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-semibold rounded-lg transition-all shadow-lg shadow-amber-500/20"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 0C8.21 0 4.831 1.757 2.632 4.501l3.953 6.848A5.454 5.454 0 0112 6.545h10.691A12 12 0 0012 0zM1.931 5.47A11.943 11.943 0 000 12c0 6.012 4.42 10.991 10.189 11.864l3.953-6.847a5.45 5.45 0 01-6.865-2.999L1.931 5.47zm13.382 2.166L12.36 12.96a5.454 5.454 0 016.864 2.998h5.346A11.943 11.943 0 0024 12c0-2.42-.72-4.67-1.95-6.556H15.313z" />
-              </svg>
-              Add to Chrome
-            </a>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Link
+                href="/waitlist"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-semibold rounded-lg transition-all shadow-lg shadow-amber-500/20"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                Join the Waitlist
+              </Link>
+              <span className="text-sm text-zinc-500">
+                Launching in ~1 week
+              </span>
+            </div>
           </div>
         </section>
       )}
