@@ -457,9 +457,6 @@ async function handleFocusChatRequest(question) {
 
     const data = await response.json();
 
-    // Debug logging
-    console.log('Convex response:', JSON.stringify(data, null, 2));
-
     // Convex wraps the response in a 'value' field
     if (data.value?.error) {
       return { error: data.value.error };
@@ -476,9 +473,8 @@ async function handleFocusChatRequest(question) {
       return { answer: data.value };
     }
 
-    // If we got here, log the issue
-    console.error('Unexpected Convex response format:', data);
-    return { error: 'Unexpected response format from API. Check console for details.' };
+    // If we got here, the response format was unexpected
+    return { error: 'Unexpected response format from API. Please try again later.' };
 
   } catch (error) {
     console.error('Focus chat error:', error);

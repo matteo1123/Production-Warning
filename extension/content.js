@@ -93,10 +93,15 @@ if (window === window.top) {
                     if (options.openAllLinks && newFocus.links.length > 0) {
                         const urls = newFocus.links.map(link => link.value).filter(u => u);
                         // Send message to background script to open a new window with these URLs
-                        chrome.runtime.sendMessage({
+                        try {
+                            chrome.runtime.sendMessage({
                             type: 'OPEN_FOCUS_WINDOW',
                             urls: urls
-                        });
+                            });
+                        } catch (error) {
+                            console.error('Failed to open focus window:', error);
+                            alert('Extension has been updated. Please refresh the page to continue.');
+                        }
                     }
                 });
             });
@@ -471,7 +476,12 @@ if (window === window.top) {
     });
 
     settingsBtn.addEventListener('click', function () {
-        chrome.runtime.sendMessage({ type: 'OPEN_FOCUS_PAGE' });
+        try {
+            chrome.runtime.sendMessage({ type: 'OPEN_FOCUS_PAGE' });
+        } catch (error) {
+            console.error('Failed to open focus settings:', error);
+            alert('Extension has been updated. Please refresh the page to continue.');
+        }
     });
 
     // Add buttons to container
@@ -798,6 +808,10 @@ if (window === window.top) {
         copyContextBtn.style.opacity = '0.7';
 
         try {
+            // Check if extension context is still valid
+            if (!chrome.runtime?.id) {
+                throw new Error('Extension context invalidated');
+            }
             const response = await chrome.runtime.sendMessage({
                 type: 'COPY_FOCUS_CONTEXT'
             });
@@ -820,7 +834,11 @@ if (window === window.top) {
                 copyContextBtn.innerHTML = originalText;
             }
         } catch (error) {
-            addChatMessage(`Error: ${error.message || 'Failed to copy context'}`, false);
+            if (error.message?.includes('Extension context invalidated') || !chrome.runtime?.id) {
+                addChatMessage('Error: Extension has been updated. Please refresh the page to continue.', false);
+            } else {
+                addChatMessage(`Error: ${error.message || 'Failed to copy context'}`, false);
+            }
             copyContextBtn.innerHTML = originalText;
         } finally {
             copyContextBtn.disabled = false;
@@ -887,6 +905,10 @@ if (window === window.top) {
         const loadingMsg = addLoadingMessage();
 
         try {
+            // Check if extension context is still valid
+            if (!chrome.runtime?.id) {
+                throw new Error('Extension context invalidated');
+            }
             // Request content extraction from background script
             const response = await chrome.runtime.sendMessage({
                 type: 'EXTRACT_FOCUS_CONTENT',
@@ -904,7 +926,11 @@ if (window === window.top) {
             }
         } catch (error) {
             loadingMsg.remove();
-            addChatMessage(`Error: ${error.message || 'Failed to process request'}`, false);
+            if (error.message?.includes('Extension context invalidated') || !chrome.runtime?.id) {
+                addChatMessage('Error: Extension has been updated. Please refresh the page to continue.', false);
+            } else {
+                addChatMessage(`Error: ${error.message || 'Failed to process request'}`, false);
+            }
         } finally {
             // Re-enable input
             chatInput.disabled = false;

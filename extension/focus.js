@@ -11,6 +11,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const MAX_LINKS = 8;     // Maximum number of links per focus topic
 
     /**
+     * Escapes HTML special characters to prevent XSS attacks
+     * @param {string} text - Text to escape
+     * @returns {string} Escaped text
+     */
+    function escapeHtml(text) {
+        if (text === null || text === undefined) return '';
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    /**
      * Updates the state of the "Add Focus" button based on current focus count
      * Disables button and updates tooltip if maximum limit is reached
      */
@@ -300,6 +315,12 @@ document.addEventListener('DOMContentLoaded', function () {
         // Create Warning Section (collapsible)
         const warningSection = document.createElement('div');
         warningSection.className = 'warning-section';
+        const warningEnabled = focus.warning?.enabled || false;
+        const warningEmblem = focus.warning?.emblem || 'production';
+        const warningUrlRegex = focus.warning?.urlRegex || '*';
+        const warningElementRegex = focus.warning?.elementRegex || '.*';
+        const warningExcludeContext = focus.warning?.excludeFromContext || false;
+        
         warningSection.innerHTML = `
             <div class="section-header" style="cursor: pointer; display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 8px; background: #1a1a1a; border-radius: 4px;">
                 <span class="collapse-icon">▶</span>
@@ -307,18 +328,18 @@ document.addEventListener('DOMContentLoaded', function () {
             </div>
             <div class="section-content" style="display: none; padding: 12px; background: #252525; border-radius: 0 0 4px 4px; margin-top: -4px;">
                 <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                    <input type="checkbox" class="warning-enabled" ${focus.warning?.enabled ? 'checked' : ''}>
+                    <input type="checkbox" class="warning-enabled" ${warningEnabled ? 'checked' : ''}>
                     Enable cursor warning for this focus
                 </label>
-                <div class="warning-config" style="${focus.warning?.enabled ? '' : 'opacity: 0.5; pointer-events: none;'}">
+                <div class="warning-config" style="${warningEnabled ? '' : 'opacity: 0.5; pointer-events: none;'}">
                     <div style="margin-bottom: 10px;">
                         <label style="display: block; margin-bottom: 4px; font-size: 11px; color: #888;">Emblem:</label>
                         <div class="emblem-picker" style="display: flex; gap: 6px; flex-wrap: wrap;">
                             ${EMBLEMS.map(e => `
-                                <span class="emblem-opt${focus.warning?.emblem === e.id ? ' selected' : ''}" 
-                                      data-emblem="${e.id}" 
-                                      title="${e.label}"
-                                      style="cursor: pointer; padding: 4px 8px; border: 1px solid ${focus.warning?.emblem === e.id ? '#ffd700' : '#444'}; border-radius: 4px;">
+                                <span class="emblem-opt${warningEmblem === e.id ? ' selected' : ''}" 
+                                      data-emblem="${escapeHtml(e.id)}" 
+                                      title="${escapeHtml(e.label)}"
+                                      style="cursor: pointer; padding: 4px 8px; border: 1px solid ${warningEmblem === e.id ? '#ffd700' : '#444'}; border-radius: 4px;">
                                     ${e.emoji}
                                 </span>
                             `).join('')}
@@ -326,15 +347,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                     <div style="margin-bottom: 10px;">
                         <label style="display: block; margin-bottom: 4px; font-size: 11px; color: #888;">URL Pattern (glob: * matches any, ? matches one char):</label>
-                        <input type="text" class="warning-url-regex" value="${focus.warning?.urlRegex || '*'}" placeholder="*salesforce*" style="width: 100%; padding: 6px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                        <input type="text" class="warning-url-regex" value="${escapeHtml(warningUrlRegex)}" placeholder="*salesforce*" style="width: 100%; padding: 6px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff;">
                     </div>
                     <div style="margin-bottom: 10px;">
                         <label style="display: block; margin-bottom: 4px; font-size: 11px; color: #888;">Element Regex (which tags):</label>
-                        <input type="text" class="warning-element-regex" value="${focus.warning?.elementRegex || '.*'}" placeholder="button|a|input" style="width: 100%; padding: 6px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff;">
+                        <input type="text" class="warning-element-regex" value="${escapeHtml(warningElementRegex)}" placeholder="button|a|input" style="width: 100%; padding: 6px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff;">
                     </div>
                     <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid #333;">
                         <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; color: #ff6b6b;">
-                            <input type="checkbox" class="warning-exclude-context" ${focus.warning?.excludeFromContext ? 'checked' : ''}>
+                            <input type="checkbox" class="warning-exclude-context" ${warningExcludeContext ? 'checked' : ''}>
                             🚫 Exclude matching URLs from AI context
                         </label>
                         <small style="color: #888; display: block; margin-top: 4px; margin-left: 24px;">
@@ -521,8 +542,8 @@ document.addEventListener('DOMContentLoaded', function () {
         noteItem.className = 'note-item';
         noteItem.style.cssText = 'display: flex; gap: 8px; margin-bottom: 8px; align-items: flex-start;';
         noteItem.innerHTML = `
-            <input type="text" class="note-url" value="${note.urlPattern || ''}" placeholder="URL pattern (*dashboard*)" style="flex: 1; padding: 6px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff;">
-            <textarea class="note-text" placeholder="Note text..." style="flex: 2; padding: 6px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff; min-height: 40px; resize: vertical;">${note.note || ''}</textarea>
+            <input type="text" class="note-url" value="${escapeHtml(note.urlPattern || '')}" placeholder="URL pattern (*dashboard*)" style="flex: 1; padding: 6px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff;">
+            <textarea class="note-text" placeholder="Note text..." style="flex: 2; padding: 6px; background: #2a2a2a; border: 1px solid #444; border-radius: 4px; color: #fff; min-height: 40px; resize: vertical;">${escapeHtml(note.note || '')}</textarea>
             <button class="remove-note" style="padding: 6px 10px; background: #cc0000; border: none; color: #fff; border-radius: 4px; cursor: pointer;">X</button>
         `;
         noteItem.querySelector('.remove-note').onclick = () => noteItem.remove();
