@@ -91,14 +91,11 @@ if (window === window.top) {
 
                     // Open all links if requested
                     if (options.openAllLinks && newFocus.links.length > 0) {
-                        // Open each link in a new tab
-                        newFocus.links.forEach((link, index) => {
-                            if (link.value) {
-                                // Small delay between opening tabs to avoid browser blocking
-                                setTimeout(() => {
-                                    window.open(link.value, '_blank');
-                                }, index * 100);
-                            }
+                        const urls = newFocus.links.map(link => link.value).filter(u => u);
+                        // Send message to background script to open a new window with these URLs
+                        chrome.runtime.sendMessage({
+                            type: 'OPEN_FOCUS_WINDOW',
+                            urls: urls
                         });
                     }
                 });

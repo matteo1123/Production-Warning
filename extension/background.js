@@ -230,6 +230,14 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     chrome.runtime.openOptionsPage();
     return false;
   }
+
+  if (message.type === 'OPEN_FOCUS_WINDOW') {
+    const urls = message.urls;
+    if (urls && urls.length > 0) {
+      chrome.windows.create({ url: urls, focused: true });
+    }
+    return false;
+  }
 });
 
 /**
