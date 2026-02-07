@@ -272,6 +272,8 @@ if (window === window.top) {
         overflow: hidden;
         transition: all 0.3s ease;
         pointer-events: auto;
+        padding-left: 60px;
+        padding-right: 140px;
     `;
     focusBar.appendChild(linksContainer);
 
@@ -285,7 +287,9 @@ if (window === window.top) {
         display: flex;
         align-items: center;
         gap: 8px;
-        pointer-events: auto;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
     `;
 
     // Add chat button (Ask Focus)
@@ -1368,6 +1372,8 @@ if (window === window.top) {
         linksContainer.style.marginTop = '8px';
         logoContainer.style.opacity = '1';
         logoContainer.style.height = 'auto';
+        rightButtonContainer.style.opacity = '1';
+        rightButtonContainer.style.pointerEvents = 'auto';
 
         // Update html margin
         requestAnimationFrame(() => {
@@ -1389,6 +1395,8 @@ if (window === window.top) {
         linksContainer.style.marginTop = '0';
         logoContainer.style.opacity = '0';
         logoContainer.style.height = '0';
+        rightButtonContainer.style.opacity = '0';
+        rightButtonContainer.style.pointerEvents = 'none';
 
         requestAnimationFrame(() => {
             const barHeight = focusBar.offsetHeight;
