@@ -6,90 +6,112 @@ if (window === window.top) {
 
     if (window.location.href.includes(FOCUS_SHARE_DOMAIN) ||
         window.location.href.includes('localhost:3000')) {
-        // Mark extension as installed for the web page to detect
-        window.__focusExtensionInstalled = true;
 
-        // Listen for import events from the focus share page
-        window.addEventListener('focus-share-import', (event) => {
-            const focusData = event.detail;
-            if (focusData && focusData.name && focusData.links) {
-                // Add the focus to storage
-                chrome.storage.sync.get(['focusMode'], function (result) {
-                    const focusMode = result.focusMode || { enabled: false, focuses: [] };
+        // Inject a DOM element the website can detect
+        const extensionMarker = document.createElement('div');
+        extensionMarker.id = 'pw-focus-extension-installed';
+        extensionMarker.style.display = 'none';
+        extensionMarker.dataset.version = chrome.runtime.getManifest().version;
+        document.documentElement.appendChild(extensionMarker);
 
-                    if (!focusMode.focuses) {
-                        focusMode.focuses = [];
-                    }
+        // Listen for import messages from the website via postMessage
+        window.addEventListener('message', (event) => {
+            // Only accept messages from pwfocus.net or localhost
+            if (!event.origin.includes(FOCUS_SHARE_DOMAIN) && !event.origin.includes('localhost')) {
+                return;
+            }
 
-                    // Check if we've reached max focuses (10)
-                    if (focusMode.focuses.length >= 10) {
-                        alert('Maximum of 10 focus topics reached. Please delete one first.');
-                        return;
-                    }
+            if (event.data && event.data.type === 'PWFOCUS_IMPORT_FOCUS') {
+                const focusData = event.data.focus;
+                const options = event.data.options || {};
 
-                    // Check if focus with same name already exists
-                    const existingIndex = focusMode.focuses.findIndex(f => f.name === focusData.name);
-                    if (existingIndex >= 0) {
-                        if (!confirm(`A focus named "${focusData.name}" already exists. Replace it?`)) {
-                            return;
-                        }
-                        focusMode.focuses[existingIndex] = {
-                            name: focusData.name,
-                            links: focusData.links,
-                            active: false
-                        };
-                    } else {
-                        focusMode.focuses.push({
-                            name: focusData.name,
-                            links: focusData.links,
-                            active: false
-                        });
-                    }
-
-                    chrome.storage.sync.set({ focusMode }, () => {
-                        alert(`Focus "${focusData.name}" has been imported successfully!`);
-                    });
-                });
+                if (focusData && focusData.name && focusData.links) {
+                    importFocus(focusData, options);
+                }
             }
         });
 
-        // Also try to read focus data from the page directly
-        const focusDataScript = document.getElementById('focus-share-data');
-        if (focusDataScript) {
-            try {
-                const focusData = JSON.parse(focusDataScript.textContent);
-                // Inject an import button overlay
-                const importOverlay = document.createElement('div');
-                importOverlay.id = 'focus-extension-import-overlay';
-                importOverlay.style.cssText = `
-                    position: fixed;
-                    bottom: 20px;
-                    right: 20px;
-                    background: linear-gradient(135deg, #ffd700, #ffb800);
-                    color: #1a1a1a;
-                    padding: 12px 24px;
-                    border-radius: 8px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    z-index: 99999;
-                    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
-                    transition: all 0.3s ease;
-                `;
-                importOverlay.textContent = '📥 Import to Focus Extension';
-                importOverlay.onclick = () => {
-                    window.dispatchEvent(new CustomEvent('focus-share-import', {
-                        detail: focusData
-                    }));
-                    importOverlay.textContent = '✓ Imported!';
-                    importOverlay.style.background = '#22c55e';
-                    importOverlay.style.color = '#fff';
-                    setTimeout(() => importOverlay.remove(), 2000);
+        // Function to import a focus and optionally open all links
+        function importFocus(focusData, options = {}) {
+            chrome.storage.sync.get(['focusMode'], function (result) {
+                const focusMode = result.focusMode || { enabled: true, focuses: [] };
+
+                if (!focusMode.focuses) {
+                    focusMode.focuses = [];
+                }
+
+                // Check if we've reached max focuses (10)
+                if (focusMode.focuses.length >= 10) {
+                    alert('Maximum of 10 focus topics reached. Please delete one first.');
+                    window.postMessage({ type: 'PWFOCUS_IMPORT_RESULT', success: false, error: 'max_focuses' }, '*');
+                    return;
+                }
+
+                // Build full focus object including shareUrl, warnings, notes
+                const newFocus = {
+                    name: focusData.name,
+                    description: focusData.description || '',
+                    links: focusData.links.map(link => ({
+                        key: link.key,
+                        value: link.value,
+                        context: link.context || '',
+                        warning: link.warning
+                    })),
+                    warning: focusData.warning,
+                    contextNotes: focusData.contextNotes || [],
+                    shareUrl: options.shareUrl || null,
+                    active: true // Set as active
                 };
-                document.body.appendChild(importOverlay);
-            } catch (e) {
-                console.error('Failed to parse focus data:', e);
-            }
+
+                // Check if focus with same name already exists
+                const existingIndex = focusMode.focuses.findIndex(f => f.name === focusData.name);
+                if (existingIndex >= 0) {
+                    if (!confirm(`A focus named "${focusData.name}" already exists. Replace it?`)) {
+                        window.postMessage({ type: 'PWFOCUS_IMPORT_RESULT', success: false, error: 'cancelled' }, '*');
+                        return;
+                    }
+                    // Deactivate all other focuses
+                    focusMode.focuses.forEach(f => f.active = false);
+                    focusMode.focuses[existingIndex] = newFocus;
+                } else {
+                    // Deactivate all other focuses
+                    focusMode.focuses.forEach(f => f.active = false);
+                    focusMode.focuses.push(newFocus);
+                }
+
+                // Enable focus mode
+                focusMode.enabled = true;
+                focusMode.mainFocus = newFocus.name;
+                focusMode.links = newFocus.links;
+                focusMode.warning = newFocus.warning;
+                focusMode.contextNotes = newFocus.contextNotes;
+
+                chrome.storage.sync.set({ focusMode }, () => {
+                    window.postMessage({ type: 'PWFOCUS_IMPORT_RESULT', success: true }, '*');
+
+                    // Open all links if requested
+                    if (options.openAllLinks && newFocus.links.length > 0) {
+                        // Open each link in a new tab
+                        newFocus.links.forEach((link, index) => {
+                            if (link.value) {
+                                // Small delay between opening tabs to avoid browser blocking
+                                setTimeout(() => {
+                                    window.open(link.value, '_blank');
+                                }, index * 100);
+                            }
+                        });
+                    }
+                });
+            });
         }
+
+        // Legacy: Listen for old-style focus-share-import events
+        window.addEventListener('focus-share-import', (event) => {
+            const focusData = event.detail;
+            if (focusData && focusData.name && focusData.links) {
+                importFocus(focusData, { openAllLinks: false });
+            }
+        });
     }
 
     // Create hover box element

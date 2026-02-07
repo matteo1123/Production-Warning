@@ -15,6 +15,7 @@ export default function FocusDetailPage() {
     const incrementViews = useMutation(api.shares.incrementViews);
     const [hasExtension, setHasExtension] = useState(false);
     const [imported, setImported] = useState(false);
+    const [importing, setImporting] = useState(false);
 
     // Increment views on first load
     useEffect(() => {
@@ -23,34 +24,82 @@ export default function FocusDetailPage() {
         }
     }, [share?._id]);
 
-    // Check if extension is installed
+    // Check if extension is installed by looking for DOM marker
     useEffect(() => {
         const checkExtension = () => {
-            // The extension will set this when it detects this page
-            if ((window as unknown as { __focusExtensionInstalled?: boolean }).__focusExtensionInstalled) {
+            const marker = document.getElementById('pw-focus-extension-installed');
+            if (marker) {
                 setHasExtension(true);
             }
         };
+        // Check immediately
         checkExtension();
-        // Check again after a short delay in case extension loads after page
-        const timeout = setTimeout(checkExtension, 1000);
-        return () => clearTimeout(timeout);
+        // Check again after delays since content script may load after page
+        const timeout1 = setTimeout(checkExtension, 500);
+        const timeout2 = setTimeout(checkExtension, 1500);
+        return () => {
+            clearTimeout(timeout1);
+            clearTimeout(timeout2);
+        };
     }, []);
 
-    const handleImport = () => {
-        if (share) {
-            // Dispatch custom event for extension to catch
-            const event = new CustomEvent("focus-share-import", {
-                detail: {
+    // Listen for import result from extension
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            if (event.data && event.data.type === 'PWFOCUS_IMPORT_RESULT') {
+                setImporting(false);
+                if (event.data.success) {
+                    setImported(true);
+                } else if (event.data.error === 'max_focuses') {
+                    // Error already shown by extension
+                } else if (event.data.error === 'cancelled') {
+                    // User cancelled, no action needed
+                }
+            }
+        };
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, []);
+
+    const handleOpenFocus = () => {
+        if (share && !importing) {
+            setImporting(true);
+            // Send message to extension to import and open all links
+            window.postMessage({
+                type: 'PWFOCUS_IMPORT_FOCUS',
+                focus: {
                     name: share.name,
                     description: share.description,
                     links: share.links,
                     warning: share.warning,
                     contextNotes: share.contextNotes,
                 },
-            });
-            window.dispatchEvent(event);
-            setImported(true);
+                options: {
+                    openAllLinks: true,
+                    shareUrl: window.location.href,
+                }
+            }, '*');
+        }
+    };
+
+    const handleSaveFocus = () => {
+        if (share && !importing) {
+            setImporting(true);
+            // Save focus without opening links
+            window.postMessage({
+                type: 'PWFOCUS_IMPORT_FOCUS',
+                focus: {
+                    name: share.name,
+                    description: share.description,
+                    links: share.links,
+                    warning: share.warning,
+                    contextNotes: share.contextNotes,
+                },
+                options: {
+                    openAllLinks: false,
+                    shareUrl: window.location.href,
+                }
+            }, '*');
         }
     };
 
@@ -137,28 +186,41 @@ export default function FocusDetailPage() {
                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                             </svg>
-                            <span className="font-semibold">Imported to your extension!</span>
+                            <span className="font-semibold">Focus imported and opening links!</span>
                         </div>
                     ) : hasExtension ? (
-                        <div className="flex gap-4">
-                            <button
-                                onClick={handleImport}
-                                className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-semibold rounded-lg transition-all shadow-lg shadow-amber-500/20"
-                            >
-                                Import to PW Focus Extension
-                            </button>
-                            <button
-                                onClick={() => {
-                                    if (confirm('This will open ' + share.links.length + ' tabs. Continue?')) {
-                                        share.links.forEach((link) => {
-                                            window.open(formatUrl(link.value), '_blank');
-                                        });
-                                    }
-                                }}
-                                className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-lg transition-all border border-zinc-700"
-                            >
-                                Open All
-                            </button>
+                        <div className="flex flex-col gap-3">
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={handleOpenFocus}
+                                    disabled={importing}
+                                    className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-semibold rounded-lg transition-all shadow-lg shadow-amber-500/20 disabled:opacity-50 flex items-center justify-center gap-2"
+                                >
+                                    {importing ? (
+                                        <>
+                                            <div className="animate-spin w-4 h-4 border-2 border-zinc-950 border-t-transparent rounded-full"></div>
+                                            Opening...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                            Open Focus
+                                        </>
+                                    )}
+                                </button>
+                                <button
+                                    onClick={handleSaveFocus}
+                                    disabled={importing}
+                                    className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-lg transition-all border border-zinc-700 disabled:opacity-50"
+                                >
+                                    Save Only
+                                </button>
+                            </div>
+                            <p className="text-xs text-zinc-500 text-center">
+                                &quot;Open Focus&quot; imports to your extension and opens all {share.links.length} links
+                            </p>
                         </div>
                     ) : (
                         <div className="text-center">
