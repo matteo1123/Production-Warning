@@ -4,9 +4,30 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Link from "next/link";
 import { Header } from "../components/Header";
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const shares = useQuery(api.shares.listShares, { limit: 50 });
+  const [hasExtension, setHasExtension] = useState(false);
+
+  // Check if extension is installed by looking for DOM marker
+  useEffect(() => {
+    const checkExtension = () => {
+      const marker = document.getElementById('pw-focus-extension-installed');
+      if (marker) {
+        setHasExtension(true);
+      }
+    };
+    // Check immediately
+    checkExtension();
+    // Check again after delays since content script may load after page
+    const timeout1 = setTimeout(checkExtension, 500);
+    const timeout2 = setTimeout(checkExtension, 1500);
+    return () => {
+      clearTimeout(timeout1);
+      clearTimeout(timeout2);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950">
@@ -91,27 +112,29 @@ export default function Home() {
       </section >
 
       {/* Get Extension Section */}
-      < section id="get-extension" className="bg-zinc-900/50 border-t border-zinc-800" >
-        <div className="max-w-6xl mx-auto px-6 py-16 text-center">
-          <h3 className="text-2xl font-bold mb-4 text-white">
-            Get PW Focus Extension
-          </h3>
-          <p className="text-zinc-400 mb-6 max-w-xl mx-auto">
-            Install the browser extension to import focuses directly and create your own curated browsing sessions.
-          </p>
-          <a
-            href="https://chromewebstore.google.com/detail/production-warning/gijcnlfiljejcgbcjnkpnbefjngcgapd"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-semibold rounded-lg transition-all shadow-lg shadow-amber-500/20"
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 0C8.21 0 4.831 1.757 2.632 4.501l3.953 6.848A5.454 5.454 0 0112 6.545h10.691A12 12 0 0012 0zM1.931 5.47A11.943 11.943 0 000 12c0 6.012 4.42 10.991 10.189 11.864l3.953-6.847a5.45 5.45 0 01-6.865-2.999L1.931 5.47zm13.382 2.166L12.36 12.96a5.454 5.454 0 016.864 2.998h5.346A11.943 11.943 0 0024 12c0-2.42-.72-4.67-1.95-6.556H15.313z" />
-            </svg>
-            Add to Chrome
-          </a>
-        </div>
-      </section >
+      {!hasExtension && (
+        <section id="get-extension" className="bg-zinc-900/50 border-t border-zinc-800">
+          <div className="max-w-6xl mx-auto px-6 py-16 text-center">
+            <h3 className="text-2xl font-bold mb-4 text-white">
+              Get PW Focus Extension
+            </h3>
+            <p className="text-zinc-400 mb-6 max-w-xl mx-auto">
+              Install the browser extension to import focuses directly and create your own curated browsing sessions.
+            </p>
+            <a
+              href="https://chromewebstore.google.com/detail/production-warning/gijcnlfiljejcgbcjnkpnbefjngcgapd"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-semibold rounded-lg transition-all shadow-lg shadow-amber-500/20"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0C8.21 0 4.831 1.757 2.632 4.501l3.953 6.848A5.454 5.454 0 0112 6.545h10.691A12 12 0 0012 0zM1.931 5.47A11.943 11.943 0 000 12c0 6.012 4.42 10.991 10.189 11.864l3.953-6.847a5.45 5.45 0 01-6.865-2.999L1.931 5.47zm13.382 2.166L12.36 12.96a5.454 5.454 0 016.864 2.998h5.346A11.943 11.943 0 0024 12c0-2.42-.72-4.67-1.95-6.556H15.313z" />
+              </svg>
+              Add to Chrome
+            </a>
+          </div>
+        </section>
+      )}
 
       {/* Footer */}
       < footer className="border-t border-zinc-800 py-6 text-center text-sm text-zinc-500" >

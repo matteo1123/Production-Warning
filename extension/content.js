@@ -1259,13 +1259,16 @@ if (window === window.top) {
                 const topValue = parseInt(style.top, 10);
                 const rect = el.getBoundingClientRect();
 
-                // If element is visually at the top (within 5px of 0)
-                // We check style.top specifically or if it's 'auto' but visually at top
+                // If element is visually within the area the bar would cover
+                // We checks style.top specifically or if it's 'auto' but visually at top
                 let isAtTop = false;
 
-                if (style.top !== 'auto' && !isNaN(topValue) && topValue >= 0 && topValue <= 5) {
+                // Threshold: if element is in the top header area
+                const threshold = barHeight || 50;
+
+                if (style.top !== 'auto' && !isNaN(topValue) && topValue >= 0 && topValue < threshold) {
                     isAtTop = true;
-                } else if (style.top === 'auto' && rect.top <= 5) {
+                } else if (style.top === 'auto' && rect.top < threshold) {
                     isAtTop = true;
                 }
 
