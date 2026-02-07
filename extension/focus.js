@@ -638,8 +638,21 @@ document.addEventListener('DOMContentLoaded', function () {
             }];
 
             // Create focus items for each saved focus
-            focuses.forEach(focus => {
-                focusList.appendChild(createFocusItem(focus));
+            focuses.forEach((focus, index) => {
+                try {
+                    // Ensure focus has required properties
+                    const normalizedFocus = {
+                        name: focus.name || '',
+                        description: focus.description || '',
+                        links: Array.isArray(focus.links) ? focus.links : [],
+                        active: !!focus.active,
+                        warning: focus.warning || { enabled: false, emblem: 'production', elementRegex: '.*', urlRegex: '*' },
+                        contextNotes: Array.isArray(focus.contextNotes) ? focus.contextNotes : []
+                    };
+                    focusList.appendChild(createFocusItem(normalizedFocus));
+                } catch (error) {
+                    console.error(`Error rendering focus at index ${index}:`, error, focus);
+                }
             });
         }
         updateAddFocusButton();

@@ -48,6 +48,16 @@ if (window === window.top) {
                 }
 
                 // Build full focus object including shareUrl, warnings, notes
+                // Normalize warning data - shared focuses may use 'cursorWarning' instead of 'warning'
+                const warning = focusData.warning || focusData.cursorWarning || { enabled: false, emblem: 'production', elementRegex: '.*', urlRegex: '*' };
+                
+                // Normalize context notes - ensure they are in the correct format for the settings page
+                let contextNotes = focusData.contextNotes || [];
+                // If contextNotes is not an array, convert it to an array
+                if (!Array.isArray(contextNotes)) {
+                    contextNotes = [];
+                }
+                
                 const newFocus = {
                     name: focusData.name,
                     description: focusData.description || '',
@@ -57,8 +67,8 @@ if (window === window.top) {
                         context: link.context || '',
                         warning: link.warning
                     })),
-                    warning: focusData.warning,
-                    contextNotes: focusData.contextNotes || [],
+                    warning: warning,
+                    contextNotes: contextNotes,
                     shareUrl: options.shareUrl || null,
                     active: true // Set as active
                 };
@@ -414,7 +424,7 @@ if (window === window.top) {
                 name: activeFocus.name,
                 description: activeFocus.description || '',
                 links: activeFocus.links || [],
-                cursorWarning: activeFocus.cursorWarning || null,
+                warning: activeFocus.warning || { enabled: false, emblem: 'production', elementRegex: '.*', urlRegex: '*' },
                 contextNotes: activeFocus.contextNotes || []
             };
 
