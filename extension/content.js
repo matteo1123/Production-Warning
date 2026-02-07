@@ -272,7 +272,7 @@ if (window === window.top) {
         overflow: hidden;
         transition: all 0.3s ease;
         pointer-events: auto;
-        padding-left: 60px;
+        padding-left: 170px;
         padding-right: 140px;
     `;
     focusBar.appendChild(linksContainer);
