@@ -65,6 +65,8 @@ export default defineSchema({
         createdAt: v.number(),
         views: v.number(),
         sharedBy: v.optional(v.string()),
+        // Secret token for updating the share (anonymous ownership)
+        updateToken: v.optional(v.string()),
     })
         .index("by_created", ["createdAt"])
         .index("by_owner", ["ownerId"]),

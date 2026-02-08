@@ -320,7 +320,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const warningUrlRegex = focus.warning?.urlRegex || '*';
         const warningElementRegex = focus.warning?.elementRegex || '.*';
         const warningExcludeContext = focus.warning?.excludeFromContext || false;
-        
+
         warningSection.innerHTML = `
             <div class="section-header" style="cursor: pointer; display: flex; align-items: center; gap: 8px; margin-top: 12px; padding: 8px; background: #1a1a1a; border-radius: 4px;">
                 <span class="collapse-icon">▶</span>
@@ -377,11 +377,11 @@ document.addEventListener('DOMContentLoaded', function () {
         };
 
         // Enable/disable warning config
-        const warningEnabled = warningSection.querySelector('.warning-enabled');
+        const warningEnabledCheckbox = warningSection.querySelector('.warning-enabled');
         const warningConfig = warningSection.querySelector('.warning-config');
-        warningEnabled.onchange = () => {
-            warningConfig.style.opacity = warningEnabled.checked ? '1' : '0.5';
-            warningConfig.style.pointerEvents = warningEnabled.checked ? 'auto' : 'none';
+        warningEnabledCheckbox.onchange = () => {
+            warningConfig.style.opacity = warningEnabledCheckbox.checked ? '1' : '0.5';
+            warningConfig.style.pointerEvents = warningEnabledCheckbox.checked ? 'auto' : 'none';
         };
 
         // Emblem picker clicks
@@ -702,5 +702,56 @@ document.addEventListener('DOMContentLoaded', function () {
         chrome.storage.sync.set({ focusMode }, function () {
             alert('Focus mode settings saved!');
         });
+    });
+
+    // Listen for storage changes to keep UI in sync (e.g. from context menu or imports)
+    chrome.storage.onChanged.addListener((changes, namespace) => {
+        if (namespace === 'sync' && changes.focusMode) {
+            // Only update if the change didn't come from this page's save action
+            // We can detect this by checking if document is focused, but that's not 100% reliable.
+            // A better way is to check the values.
+
+            const newValue = changes.focusMode.newValue;
+            if (!newValue) return;
+
+            // Simple check: active focus name or count changed?
+            // For a robust solution, we should probably just reload the list if it looks different
+            // But we don't want to blow away user edits in progress.
+
+            // For now, let's just update if the number of focuses changed (added/deleted externally)
+            // or if the active focus changed. 
+            // This covers the "Focus Not Visible" case (added via context menu)
+
+            // We'll read the current UI state to see if we should warn or update
+            const currentFocusCount = focusList.querySelectorAll('.focus-item').length;
+            const newFocusCount = (newValue.focuses || []).length;
+
+            if (newFocusCount !== currentFocusCount) {
+                // External change detected (likely added/removed focus)
+                console.log('External focus change detected, refreshing list...');
+
+                // Clear and rebuild list
+                // Note: refined logic would preserve un-saved edits, but for now 
+                // ensures we see the new focus which is the critical bug.
+                focusList.innerHTML = '';
+
+                enableFocus.checked = newValue.enabled;
+
+                const focuses = newValue.focuses || [];
+                focuses.forEach((focus) => {
+                    const normalizedFocus = {
+                        name: focus.name || '',
+                        description: focus.description || '',
+                        links: Array.isArray(focus.links) ? focus.links : [],
+                        active: !!focus.active,
+                        warning: focus.warning || { enabled: false, emblem: 'production', elementRegex: '.*', urlRegex: '*' },
+                        contextNotes: Array.isArray(focus.contextNotes) ? focus.contextNotes : []
+                    };
+                    focusList.appendChild(createFocusItem(normalizedFocus));
+                });
+
+                updateAddFocusButton();
+            }
+        }
     });
 }); 

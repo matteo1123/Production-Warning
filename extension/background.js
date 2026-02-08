@@ -181,6 +181,12 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
           focusMode.enabled = true;
 
           // Save updated focus mode data
+          // Ensure top-level properties are synced for content script
+          focusMode.mainFocus = newFocus.name;
+          focusMode.links = newFocus.links;
+          focusMode.warning = newFocus.warning;
+          focusMode.contextNotes = newFocus.contextNotes;
+
           chrome.storage.sync.set({ focusMode }, () => {
             // Show success badge
             chrome.action.setBadgeText({ text: "✓" });

@@ -50,14 +50,14 @@ if (window === window.top) {
                 // Build full focus object including shareUrl, warnings, notes
                 // Normalize warning data - shared focuses may use 'cursorWarning' instead of 'warning'
                 const warning = focusData.warning || focusData.cursorWarning || { enabled: false, emblem: 'production', elementRegex: '.*', urlRegex: '*' };
-                
+
                 // Normalize context notes - ensure they are in the correct format for the settings page
                 let contextNotes = focusData.contextNotes || [];
                 // If contextNotes is not an array, convert it to an array
                 if (!Array.isArray(contextNotes)) {
                     contextNotes = [];
                 }
-                
+
                 const newFocus = {
                     name: focusData.name,
                     description: focusData.description || '',
@@ -105,8 +105,8 @@ if (window === window.top) {
                         // Send message to background script to open a new window with these URLs
                         try {
                             chrome.runtime.sendMessage({
-                            type: 'OPEN_FOCUS_WINDOW',
-                            urls: urls
+                                type: 'OPEN_FOCUS_WINDOW',
+                                urls: urls
                             });
                         } catch (error) {
                             console.error('Failed to open focus window:', error);
@@ -149,17 +149,19 @@ if (window === window.top) {
         position: fixed;
         top: 0;
         left: 0;
+        right: 0;
         width: 100%;
         background-color: #1a1a1a;
         height: auto;
         min-height: 28px;
         padding: 6px 0;
         border-bottom: 2px solid #ffd700;
-        z-index: 10001;
+        z-index: 2147483647; /* Max z-index */
         display: none;
         text-align: center;
         transition: all 0.3s ease;
         pointer-events: none;
+        box-sizing: border-box;
     `;
 
     // Add logo container
@@ -255,6 +257,8 @@ if (window === window.top) {
         cursor: pointer;
         transition: color 0.3s ease;
         pointer-events: auto;
+        width: 100%;
+        margin: 0 auto;
     `;
 
     // Add emphasis arrows
