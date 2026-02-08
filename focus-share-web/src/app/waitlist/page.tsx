@@ -29,14 +29,11 @@ export default function WaitlistPage() {
                     setMessage("You're on the list! We'll email you as soon as the extension is available.");
                 }
                 setEmail("");
-            } else {
-                setStatus("error");
-                setMessage(result.error || "Something went wrong. Please try again.");
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Signup error:", error);
             setStatus("error");
-            setMessage("Something went wrong. Please try again. Check console for details.");
+            setMessage(error?.message || "Something went wrong. Please try again.");
         }
     };
 

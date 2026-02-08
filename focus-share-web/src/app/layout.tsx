@@ -31,32 +31,10 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" className="dark" suppressHydrationWarning>
-        <head>
-          {/* Google Analytics */}
-          {GA_MEASUREMENT_ID && (
-            <>
-              <Script
-                src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-                strategy="afterInteractive"
-              />
-              <Script id="google-analytics" strategy="afterInteractive">
-                {`
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('js', new Date());
-                  gtag('config', '${GA_MEASUREMENT_ID}', {
-                    page_title: document.title,
-                    page_path: window.location.pathname,
-                  });
-                `}
-              </Script>
-            </>
-          )}
-        </head>
-        <body
-          className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-950 text-white`}
-          suppressHydrationWarning
-        >
+        <head>{GA_MEASUREMENT_ID ? (
+          <><Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive" /><Script id="google-analytics" strategy="afterInteractive" dangerouslySetInnerHTML={{__html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${GA_MEASUREMENT_ID}',{page_title:document.title,page_path:window.location.pathname});`}} /></>
+        ) : null}</head>
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-zinc-950 text-white`} suppressHydrationWarning>
           <ConvexClientProvider>{children}</ConvexClientProvider>
         </body>
       </html>
