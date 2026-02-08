@@ -244,7 +244,40 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     return false;
   }
+
+  if (message.type === 'SHARE_FOCUS') {
+    handleShareFocus(message.payload)
+      .then(response => sendResponse(response))
+      .catch(error => sendResponse({ error: error.message }));
+    return true;
+  }
 });
+
+async function handleShareFocus(payload) {
+  try {
+    console.log('Sending share payload:', payload);
+    const response = await fetch('https://pwfocus.net/api/share', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      console.error('Share failed:', err);
+      throw new Error(err.error || 'Failed to share');
+    }
+
+    const data = await response.json();
+    console.log('Share response:', data);
+    return data;
+  } catch (error) {
+    console.error('Share error:', error);
+    throw error;
+  }
+}
 
 /**
  * Handle a chat request by extracting content from focus tabs and calling the AI API

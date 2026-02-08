@@ -426,37 +426,81 @@ if (window === window.top) {
                 return;
             }
 
+            // Check if we have edit rights
+            // const isUpdate = activeFocus.shareContext && activeFocus.shareContext.id && activeFocus.shareContext.updateToken;
+            const isUpdate = false; // Forced new share
+
             // Prepare focus data for sharing
-            const shareData = {
+            const payload = {
                 name: activeFocus.name,
                 description: activeFocus.description || '',
                 links: activeFocus.links || [],
                 warning: activeFocus.warning || { enabled: false, emblem: 'production', elementRegex: '.*', urlRegex: '*' },
-                contextNotes: activeFocus.contextNotes || []
+                contextNotes: activeFocus.contextNotes || [],
+                sharedBy: 'extension'
             };
 
-            // Call the share API
-            const response = await fetch('https://pwfocus.net/api/share', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(shareData)
+            // Add ID and Token if updating
+            if (isUpdate) {
+                payload.id = activeFocus.shareContext.id;
+                payload.updateToken = activeFocus.shareContext.updateToken;
+            }
+
+            console.log('Extensions sharing:', payload);
+
+            // Call the share API via background script
+            const response = await chrome.runtime.sendMessage({
+                type: 'SHARE_FOCUS',
+                payload: payload
             });
 
-            if (response.ok) {
-                const { shareId } = await response.json();
-                const shareUrl = `https://pwfocus.net/f/${shareId}`;
+            if (response && response.error) {
+                throw new Error(response.error);
+            }
+
+            console.log('Share response:', response);
+            let shareId = null;
+            let updateToken = null;
+
+            if (typeof response === 'string') {
+                shareId = response;
+            } else if (typeof response === 'object') {
+                shareId = response.id || response.shareId;
+                updateToken = response.updateToken;
+            }
+            if (shareId) {
+                // Save context back to focus (ID and Token) if we got a token back
+                // This happens on CREATE (always) and UPDATE (if API returns it, which it does)
+                if (updateToken) {
+                    const focusIndex = focusMode.focuses.findIndex(f => f.active);
+                    if (focusIndex !== -1) {
+                        focusMode.focuses[focusIndex].shareContext = {
+                            id: shareId,
+                            updateToken: updateToken,
+                            lastShared: Date.now()
+                        };
+                        // Save Update Token to storage
+                        await chrome.storage.sync.set({ focusMode });
+                    }
+                }
+
+                const shareUrl = `https://pwfocus.net/focus/${shareId}`;
                 await navigator.clipboard.writeText(shareUrl);
                 shareBtn.innerHTML = '✅';
                 setTimeout(() => { shareBtn.innerHTML = originalIcon; }, 2000);
-                alert(`Share link copied: ${shareUrl}`);
+                alert(`Focus shared! URL copied: ${shareUrl}`);
             } else {
-                throw new Error('Failed to share');
+                throw new Error(`Invalid response key: ${JSON.stringify(response)}`);
             }
         } catch (error) {
             console.error('Share error:', error);
+            if (error.message.includes('Extension context invalidated') || error.message.includes('context')) {
+                alert('Extension updated. Please refresh the page to use sharing.');
+            } else {
+                alert('Failed to share focus: ' + (error.message || 'Unknown error'));
+            }
             shareBtn.innerHTML = '❌';
             setTimeout(() => { shareBtn.innerHTML = originalIcon; }, 2000);
-            alert('Failed to share focus. Please try again.');
         } finally {
             shareBtn.style.pointerEvents = 'auto';
         }

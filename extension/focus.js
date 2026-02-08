@@ -292,6 +292,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // Create main container
         const focusItem = document.createElement('div');
         focusItem.className = `focus-item${focus.active ? ' active' : ''}`;
+        if (focus.shareContext) {
+            focusItem.dataset.shareContext = JSON.stringify(focus.shareContext);
+        }
 
         // Create name input
         const focusName = document.createElement('input');
@@ -479,33 +482,91 @@ document.addEventListener('DOMContentLoaded', function () {
             shareBtn.disabled = true;
 
             try {
-                // Call the share API with full focus data
-                const response = await fetch('https://pwfocus.net/api/share', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(focusData)
+                // Check if we have edit rights (from DOM dataset)
+                let shareContext = null;
+                try {
+                    if (focusItem.dataset.shareContext) {
+                        shareContext = JSON.parse(focusItem.dataset.shareContext);
+                    }
+                } catch (e) { console.error('Error parsing share context', e); }
+
+                // const isUpdate = shareContext && shareContext.id && shareContext.updateToken;
+                // Force new share per user request
+                const isUpdate = false;
+
+                // Add ID and Token if updating
+                if (isUpdate) {
+                    focusData.id = shareContext.id;
+                    focusData.updateToken = shareContext.updateToken;
+                }
+
+                focusData.sharedBy = 'extension_options';
+
+                // Call the share API via background script
+                const response = await chrome.runtime.sendMessage({
+                    type: 'SHARE_FOCUS',
+                    payload: focusData
                 });
 
-                if (response.ok) {
-                    const { id } = await response.json();
-                    const shareUrl = `https://pwfocus.net/focus/${id}`;
+                if (response && response.error) {
+                    throw new Error(response.error);
+                }
+
+                console.log('Extensions sharing response:', response);
+                let shareId = null;
+                let updateToken = null;
+
+                if (typeof response === 'string') {
+                    shareId = response;
+                } else if (typeof response === 'object') {
+                    shareId = response.id || response.shareId;
+                    updateToken = response.updateToken;
+                }
+
+                if (shareId) {
+                    const shareUrl = `https://pwfocus.net/focus/${shareId}`;
+
+                    // Save context back to DOM if we got a token (CREATE or UPDATE)
+                    if (updateToken) {
+                        const newContext = {
+                            id: shareId,
+                            updateToken: updateToken,
+                            lastShared: Date.now()
+                        };
+                        focusItem.dataset.shareContext = JSON.stringify(newContext);
+
+                        // Auto-save to storage so token isn't lost if user doesn't click Save
+                        // We need to trigger a save of all focuses
+                        // But for now, relying on the user to click Save is risky.
+                        // Better to update storage directly here.
+                        chrome.storage.sync.get(['focusMode'], function (result) {
+                            if (result.focusMode && result.focusMode.focuses) {
+                                // Find this focus in the array. Since names are unique-ish, or we can rely on index if we knew it.
+                                // But here we don't know index. 
+                                // Collecting all data again is safe.
+                                saveBtn.click(); // Trigger the save button click to persist everything
+                            }
+                        });
+                    }
 
                     // Copy to clipboard
                     await navigator.clipboard.writeText(shareUrl);
 
-                    shareBtn.textContent = 'Copied!';
+                    shareBtn.textContent = 'Shared!';
+                    // shareBtn.textContent = isUpdate ? 'Updated!' : 'Shared!';
                     setTimeout(() => {
                         shareBtn.textContent = 'Share';
                         shareBtn.disabled = false;
                     }, 2000);
+                    alert(`Focus shared! URL copied: ${shareUrl}`);
                 } else {
-                    throw new Error('Failed to share');
+                    throw new Error(`Invalid response from server: ${JSON.stringify(response)}`);
                 }
             } catch (error) {
                 console.error('Share error:', error);
                 shareBtn.textContent = 'Share';
                 shareBtn.disabled = false;
-                alert('Failed to share focus. Please try again.');
+                alert('Failed to share focus: ' + (error.message || 'Unknown error'));
             }
         };
 
@@ -621,7 +682,8 @@ document.addEventListener('DOMContentLoaded', function () {
             links,
             active: focusItem.classList.contains('active'),
             warning,
-            contextNotes
+            contextNotes,
+            shareContext: focusItem.dataset.shareContext ? JSON.parse(focusItem.dataset.shareContext) : null
         };
     }
 
