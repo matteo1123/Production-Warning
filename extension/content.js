@@ -1045,7 +1045,7 @@ if (window === window.top) {
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
             <text x="0" y="24" font-size="24">${info.emoji}</text>
         </svg>`;
-        return `url('data:image/svg+xml;utf8,${encodeURIComponent(svg)}') 16 16, pointer`;
+        return `url('data:image/svg+xml;utf8,${encodeURIComponent(svg)}') 16 16, auto`;
     }
 
     // Convert glob pattern to regex
@@ -1075,82 +1075,74 @@ if (window === window.top) {
         return null;
     }
 
-    // Function to add cursor change listeners to an element
-    function addWarningListeners(element, rule) {
-        const emblemInfo = EMBLEMS[rule.emblem] || EMBLEMS.production;
-        const cursorValue = generateCursorSvg(rule.emblem);
-        const originalCursor = element.style.cursor;
+    // CSS Injection for Cursor Warnings
+    let warningStyleElement = null;
 
-        element.addEventListener('mouseenter', function () {
-            this.style.cursor = cursorValue;
-            // Also add a subtle border glow - Disabled per user request
-            // this._originalOutline = this.style.outline;
-            // this.style.outline = `2px solid ${emblemInfo.color}`;
-            // this.style.outlineOffset = '2px';
-        });
-
-        element.addEventListener('mouseleave', function () {
-            this.style.cursor = originalCursor || '';
-            // this.style.outline = this._originalOutline || '';
-            // this.style.outlineOffset = '';
-        });
-    }
-
-    // Function to process elements based on matching rules
-    function processWarningElements(rootElement) {
-        const matchingRule = getMatchingRule(window.location.href);
-        if (!matchingRule) return;
-
-        const selector = matchingRule.elementSelector || '*';
-
-        try {
-            rootElement.querySelectorAll(selector).forEach(element => {
-                // Don't add warning to elements inside the focus bar
-                if (focusBar.contains(element)) return;
-                // Don't process the same element twice
-                if (element._warningProcessed) return;
-                element._warningProcessed = true;
-
-                addWarningListeners(element, matchingRule);
-            });
-        } catch (e) {
-            // If selector is invalid, fall back to common interactive elements
-            rootElement.querySelectorAll('a, button, input, select, label').forEach(element => {
-                if (focusBar.contains(element)) return;
-                if (element._warningProcessed) return;
-                element._warningProcessed = true;
-
-                addWarningListeners(element, matchingRule);
-            });
+    function updateWarningStyles() {
+        if (!warningStyleElement) {
+            warningStyleElement = document.createElement('style');
+            warningStyleElement.id = 'pw-focus-warning-styles';
+            document.head.appendChild(warningStyleElement);
         }
 
-        // Process iframes
-        rootElement.querySelectorAll("iframe").forEach(iframe => {
+        let cssRules = '';
+        const currentUrl = window.location.href;
+
+        // 1. Check Global Warning Rules
+        const matchingRule = getMatchingRule(currentUrl);
+        if (matchingRule) {
+            console.log('PW Debug: applying rule', matchingRule);
+            const cursorVal = generateCursorSvg(matchingRule.emblem);
+            let selector = matchingRule.elementSelector || '*';
+
+            // Validate selector, fallback if invalid
             try {
-                if (iframe.contentDocument) {
-                    processWarningElements(iframe.contentDocument);
-                    warningObserver.observe(iframe.contentDocument.body, {
-                        childList: true,
-                        subtree: true
-                    });
+                document.querySelector(selector);
+            } catch (e) {
+                console.warn('PW Debug: Invalid selector, falling back', selector);
+                selector = 'a, button, input, select, label';
+            }
+
+            // Apply !important to override site styles
+            cssRules += `
+                ${selector} {
+                    cursor: ${cursorVal} !important;
                 }
-            } catch { } // Ignore cross-origin errors
-        });
+            `;
+        }
+
+        // 2. Check Focus Mode Warning
+        if (activeFocusWarning && activeFocusWarning.enabled) {
+            if (urlMatchesFocusWarning(currentUrl, activeFocusWarning)) {
+                console.log('PW Debug: applying focus warning', activeFocusWarning);
+                const cursorVal = generateCursorSvg(activeFocusWarning.emblem || 'production');
+
+                // Focus warning uses elementRegex (tag name regex) usually, 
+                // but we'll map common cases to CSS or default to *
+                // Converting arbitrary regex to CSS selector is hard, so we assume * 
+                // unless it's strictly matching specific tags which we can't easily parse here 
+                // without the original config structure.
+                // Assuming '*' for simplicity allows it to be robust.
+
+                cssRules += `
+                    * {
+                        cursor: ${cursorVal} !important;
+                    }
+                `;
+            }
+        }
+
+        warningStyleElement.textContent = cssRules;
     }
 
-    // Mutation observer for dynamically added elements
+    // Mutation observer - ONLY for offsetFixedElements now
+    // We don't need to observe for cursor changes since CSS handles it
     let mutationTimeout;
     const warningObserver = new MutationObserver((mutations) => {
         let shouldProcess = false;
         mutations.forEach(mutation => {
             if (mutation.type === 'childList') {
                 shouldProcess = true;
-                mutation.addedNodes.forEach(node => {
-                    if (node.nodeType === Node.ELEMENT_NODE) {
-                        processWarningElements(node);
-                        processFocusWarningElements(node);
-                    }
-                });
             }
         });
 
@@ -1169,16 +1161,6 @@ if (window === window.top) {
     // Active focus warning config
     let activeFocusWarning = null;
 
-    // Check if element matches focus warning criteria
-    function matchesElementRegex(element, regex) {
-        try {
-            const pattern = new RegExp(regex, 'i');
-            return pattern.test(element.tagName.toLowerCase());
-        } catch {
-            return true; // Default to match all if regex is invalid
-        }
-    }
-
     // Check if URL matches focus warning urlRegex
     function urlMatchesFocusWarning(url, warning) {
         if (!warning || !warning.enabled) return false;
@@ -1190,46 +1172,19 @@ if (window === window.top) {
         }
     }
 
-    // Process elements for focus-specific warnings
-    function processFocusWarningElements(rootElement) {
-        if (!activeFocusWarning || !activeFocusWarning.enabled) return;
-        if (!urlMatchesFocusWarning(window.location.href, activeFocusWarning)) return;
-
-        const elementRegex = activeFocusWarning.elementRegex || '.*';
-
-        rootElement.querySelectorAll('*').forEach(element => {
-            // Skip focus bar elements
-            if (focusBar.contains(element)) return;
-            // Skip already processed elements
-            if (element._focusWarningProcessed) return;
-
-            // Check if element matches the regex
-            if (matchesElementRegex(element, elementRegex)) {
-                element._focusWarningProcessed = true;
-                addWarningListeners(element, {
-                    emblem: activeFocusWarning.emblem || 'production',
-                    elementSelector: '*'
-                });
-            }
-        });
-    }
-
     // Load warning rules and process page
     chrome.storage.sync.get(['warningRules', 'focusMode'], function (result) {
+        console.log('PW Debug: Storage loaded', result);
         warningRules = result.warningRules || [];
 
-        // Process global warning rules
-        if (warningRules.length > 0) {
-            processWarningElements(document);
-        }
-
-        // Process focus-specific warning
         if (result.focusMode && result.focusMode.enabled && result.focusMode.warning) {
             activeFocusWarning = result.focusMode.warning;
-            processFocusWarningElements(document);
         }
 
-        // Start observing for dynamic content
+        // Apply styles initially
+        updateWarningStyles();
+
+        // Start observing for dynamic content (for fixed elements offset)
         warningObserver.observe(document.body, {
             childList: true,
             subtree: true
@@ -1239,8 +1194,11 @@ if (window === window.top) {
     // Listen for rule updates
     chrome.storage.onChanged.addListener((changes, namespace) => {
         if (namespace === 'sync') {
+            let shouldUpdate = false;
+
             if (changes.warningRules) {
                 warningRules = changes.warningRules.newValue || [];
+                shouldUpdate = true;
             }
             if (changes.focusMode) {
                 const focusMode = changes.focusMode.newValue;
@@ -1249,6 +1207,11 @@ if (window === window.top) {
                 } else {
                     activeFocusWarning = null;
                 }
+                shouldUpdate = true;
+            }
+
+            if (shouldUpdate) {
+                updateWarningStyles();
             }
         }
     });
