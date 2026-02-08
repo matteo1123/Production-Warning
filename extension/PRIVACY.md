@@ -1,6 +1,6 @@
 # PW Focus Privacy Policy
 
-**Effective Date:** February 7, 2026
+**Effective Date:** February 8, 2026
 
 ## Overview
 
@@ -10,41 +10,32 @@ PW Focus ("we", "our", or "the extension") is committed to protecting your priva
 
 ### Local Data (Stored on Your Device)
 
-PW Focus stores the following data **locally** on your device using Chrome's storage API:
+PW Focus stores the following data **locally** on your device using Chrome's secure storage API:
 
 - **Focus configurations**: Names, descriptions, and link collections you create
 - **Warning rules**: URL patterns and element selectors for cursor warnings
 - **Context notes**: Notes you attach to specific URLs
 - **Settings**: Your preferences including data sharing consent
 
-This data never leaves your device unless you explicitly choose to share a focus.
+This data never leaves your device unless you explicitly choose to share a focus or use the AI features.
 
-### Data Shared with External Services (Opt-in Only)
+### Data Shared with External Services
 
-**AI Chat Feature**: When you use the "Ask Focus" chat feature AND have enabled data sharing:
+**1. AI Chat Feature (Powered by Google Gemini)**
+When you use the "Ask Focus" chat feature:
 
-- **Page content** from your open focus tabs is extracted and sent to our AI service (Convex) to generate responses
-- **Your question** is transmitted to the AI service
-- **Anonymous usage data** may be collected to improve the service
+- **Page content** (text only) from your open focus tabs is extracted and sent to our backend (hosted on **Convex**).
+- This data is then forwarded to **Google Gemini** (the AI model) to generate an answer.
+- **Data Retention**:
+    - If you **opt-in** to data collection: Your questions and page context may be stored to improve the service.
+    - If you **opt-out**: Your data is processed ephemerally and not persisted after the answer is generated.
 
-**Important Limitations:**
-- **No Automatic Access**: PW Focus cannot bypass login screens or authenticate to websites. The extension only extracts text content that is already visible on the page in your browser.
-- **What You See Is What Gets Shared**: If you are logged into a private site (e.g., Salesforce, internal dashboards), the extension can only access the page content visible to you as a logged-in user. This means sensitive data visible on those pages could be included in the chat context.
+**2. Focus Sharing**
+When you click "Share Active Focus":
 
-**Protecting Sensitive Data:**
-Each focus includes a "Cursor Warning" feature that allows you to exclude specific websites from AI chat context:
-- Set a URL pattern (e.g., `*salesforce*`, `*dashboard*`, `*admin*`)
-- Enable "Exclude matching URLs from AI context"
-- Pages matching this pattern will be skipped when extracting content for AI chat
-
-You can opt out of data sharing at any time in the Focus Mode Settings. When disabled, all AI chat processing happens without storing data.
-
-### Data Shared with Other Users
-
-**Focus Sharing**: When you choose to share a focus:
-
-- Focus name, description, links, and warnings are transmitted to our sharing service (pwfocus.net)
-- A shareable link is generated that other users can use to import your focus
+- Focus name, links, and context notes are uploaded to our backend (**Convex**).
+- A **publicly accessible link** (with a unique ID) is generated. Anyone with this link can view and import your focus.
+- **Privacy Warning**: Do not share focuses that contain private URLs or sensitive notes if you do not want them to be accessible to others who have the link.
 
 This only happens when you explicitly click the share button.
 

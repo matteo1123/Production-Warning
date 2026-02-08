@@ -1091,7 +1091,6 @@ if (window === window.top) {
         // 1. Check Global Warning Rules
         const matchingRule = getMatchingRule(currentUrl);
         if (matchingRule) {
-            console.log('PW Debug: applying rule', matchingRule);
             const cursorVal = generateCursorSvg(matchingRule.emblem);
             let selector = matchingRule.elementSelector || '*';
 
@@ -1099,7 +1098,6 @@ if (window === window.top) {
             try {
                 document.querySelector(selector);
             } catch (e) {
-                console.warn('PW Debug: Invalid selector, falling back', selector);
                 selector = 'a, button, input, select, label';
             }
 
@@ -1114,7 +1112,6 @@ if (window === window.top) {
         // 2. Check Focus Mode Warning
         if (activeFocusWarning && activeFocusWarning.enabled) {
             if (urlMatchesFocusWarning(currentUrl, activeFocusWarning)) {
-                console.log('PW Debug: applying focus warning', activeFocusWarning);
                 const cursorVal = generateCursorSvg(activeFocusWarning.emblem || 'production');
 
                 // Focus warning uses elementRegex (tag name regex) usually, 
@@ -1174,7 +1171,6 @@ if (window === window.top) {
 
     // Load warning rules and process page
     chrome.storage.sync.get(['warningRules', 'focusMode'], function (result) {
-        console.log('PW Debug: Storage loaded', result);
         warningRules = result.warningRules || [];
 
         if (result.focusMode && result.focusMode.enabled && result.focusMode.warning) {
