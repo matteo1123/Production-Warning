@@ -259,6 +259,7 @@ if (window === window.top) {
         pointer-events: auto;
         width: 100%;
         margin: 0 auto;
+        box-sizing: border-box;
     `;
 
     // Add emphasis arrows
@@ -293,6 +294,8 @@ if (window === window.top) {
         pointer-events: auto;
         padding-left: 170px;
         padding-right: 140px;
+        width: 100%;
+        box-sizing: border-box;
     `;
     focusBar.appendChild(linksContainer);
 
