@@ -1857,5 +1857,109 @@ if (window === window.top) {
             return true; // Keep channel open for async
         }
     });
-}
 
+    // --- TEXT COLLECTION FEATURE ---
+    chrome.storage.sync.get(['textCollection'], (result) => {
+        const config = result.textCollection;
+        if (!config || !config.enabled || !config.whitelist || config.whitelist.length === 0) return;
+
+        const currentUrl = window.location.href;
+        const currentDomain = window.location.hostname;
+
+        // Check against whitelist
+        const isWhitelisted = config.whitelist.some(domain => {
+            if (domain.startsWith('*.')) {
+                return currentDomain.endsWith(domain.slice(2));
+            }
+            return currentDomain === domain || currentUrl.startsWith(domain);
+        });
+
+        if (!isWhitelisted) return;
+
+        console.log('[PW Focus] Text collection active for this domain.');
+
+        const seenHashes = new Set();
+        let collectionDelay = null;
+
+        // Simple string hashing function
+        function hashString(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32bit int
+            }
+            return hash;
+        }
+
+        function extractAndSendText() {
+            // Very naive approach: get body text, clean up, split into paragraphs/blocks
+            const skipSelectors = [
+                'nav', 'header', 'footer', 'aside',
+                'script', 'style', 'noscript', 'iframe'
+            ];
+
+            const clone = document.body.cloneNode(true);
+            skipSelectors.forEach(selector => {
+                try {
+                    clone.querySelectorAll(selector).forEach(el => el.remove());
+                } catch (e) { }
+            });
+
+            // Try to grab text blocks rather than just one giant string, to better handle chat rooms
+            // Let's grab all div, p, span that have direct text content and are somewhat substantial
+            const textBlocks = [];
+            const walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT, null, false);
+            let node;
+            while (node = walker.nextNode()) {
+                const text = node.nodeValue.trim();
+                if (text.length > 20) { // arbitrary length to avoid noise
+                    textBlocks.push(text);
+                }
+            }
+
+            // Alternatively, just grabinnerText of main container if available, but for chatrooms, individual messages are divs
+            // So grabbing innerText of all elements that look like message bubbles might be better.
+            // As a general fallback, we'll just chunk the innerText by newlines.
+            let fullText = clone.innerText || clone.textContent || '';
+            let chunks = fullText.split(/\n+/).map(c => c.trim()).filter(c => c.length > 30);
+
+            let newChunks = [];
+
+            chunks.forEach(chunk => {
+                const hash = hashString(chunk);
+                if (!seenHashes.has(hash)) {
+                    seenHashes.add(hash);
+                    newChunks.push(chunk);
+                    // Keep set size manageable
+                    if (seenHashes.size > 10000) {
+                        const it = seenHashes.values();
+                        seenHashes.delete(it.next().value);
+                    }
+                }
+            });
+
+            if (newChunks.length > 0) {
+                const textToLog = newChunks.join('\\n\\n');
+                
+                // Send to background
+                chrome.runtime.sendMessage({
+                    type: 'SAVE_COLLECTED_TEXT',
+                    text: textToLog,
+                    source: window.location.href
+                });
+            }
+        }
+
+        // Run initially
+        setTimeout(extractAndSendText, 2000);
+
+        // Run periodically or wait for DOM changes
+        const observer = new MutationObserver(() => {
+            if (collectionDelay) clearTimeout(collectionDelay);
+            collectionDelay = setTimeout(extractAndSendText, 2000); // Debounce 2 seconds
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    });
+}

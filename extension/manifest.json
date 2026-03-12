@@ -42,6 +42,7 @@
       "resources": [
         "focus.html",
         "onboarding.html",
+        "collect.html",
         "icons/icon32.png",
         "icons/icon48.png",
         "extractor.js"

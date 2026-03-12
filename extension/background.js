@@ -244,7 +244,41 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     }
     return false;
   }
+
+  if (message.type === 'SAVE_COLLECTED_TEXT') {
+    handleCollectedText(message.text, message.source);
+    return false;
+  }
 });
+
+// --- TEXT COLLECTION FORWARDING ---
+async function handleCollectedText(text, source) {
+  try {
+    const { textCollection } = await chrome.storage.sync.get(['textCollection']);
+    if (!textCollection || !textCollection.enabled || !textCollection.endpointUrl || !textCollection.secretToken) {
+      return;
+    }
+
+    const response = await fetch(textCollection.endpointUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${textCollection.secretToken}`
+      },
+      body: JSON.stringify({
+        content: text,
+        source: source
+      })
+    });
+
+    if (!response.ok) {
+        console.error('[PW Focus] Text collection request failed:', response.statusText);
+    }
+  } catch (error) {
+    console.error('[PW Focus] Error forwarding collected text:', error);
+  }
+}
+
 
 /**
  * Handle a chat request by extracting content from focus tabs and calling the AI API

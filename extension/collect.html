@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Text Collection Settings - PW Focus</title>
+    <link rel="stylesheet" href="styles/focus.css">
+    <style>
+        body { padding: 20px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .container { max-width: 600px; margin: 0 auto; background: #1a1a1a; padding: 20px; border-radius: 8px; border: 1px solid #444; }
+        h1 { color: #ffd700; border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; color: #ccc; margin-bottom: 8px; font-weight: 500;}
+        input[type="text"], input[type="password"], textarea {
+            width: 100%; padding: 10px; background: #2a2a2a; border: 1px solid #444; color: #fff;
+            border-radius: 4px; box-sizing: border-box; font-family: monospace;
+        }
+        input:focus, textarea:focus { border-color: #ffd700; outline: none; }
+        textarea { height: 100px; resize: vertical; }
+        .help-text { font-size: 12px; color: #888; margin-top: 4px; display: block; }
+        .toggle-container { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; background: #2a2a2a; padding: 15px; border-radius: 4px; border: 1px solid #444;}
+        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #ffd700; }
+        input:checked + .slider:before { transform: translateX(26px); }
+        .save-btn {
+            background: #ffd700; color: #000; padding: 10px 20px; border: none; border-radius: 4px;
+            cursor: pointer; font-weight: bold; width: 100%; transition: background 0.2s;
+        }
+        .save-btn:hover { background: #e6c200; }
+        .status { margin-top: 15px; text-align: center; color: #00cc00; font-weight: bold; height: 20px;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Text Collection Settings</h1>
+        
+        <div class="toggle-container">
+            <label class="switch" style="margin-bottom:0;">
+                <input type="checkbox" id="enableCollection">
+                <span class="slider"></span>
+            </label>
+            <div style="color: #fff; font-weight: bold;">Enable Text Collection</div>
+        </div>
+
+        <div class="form-group">
+            <label for="endpointUrl">Supabase Edge Function URL</label>
+            <input type="text" id="endpointUrl" placeholder="https://YOUR_PROJECT.supabase.co/functions/v1/ingest-screen-text">
+            <span class="help-text">The full URL of your Supabase edge function that accepts POST requests with { content, source }.</span>
+        </div>
+
+        <div class="form-group">
+            <label for="secretToken">Authorization Bearer Token</label>
+            <input type="password" id="secretToken" placeholder="YOUR_SECRET_TOKEN">
+            <span class="help-text">The secret token to authenticate requests to your edge function.</span>
+        </div>
+
+        <div class="form-group">
+            <label for="whitelist">Whitelisted Domains</label>
+            <textarea id="whitelist" placeholder="example.com&#10;chat.openai.com&#10;github.com"></textarea>
+            <span class="help-text">Enter domains (one per line) where text collection should be active. Use * for wildcard e.g. *.example.com</span>
+        </div>
+
+        <button id="saveBtn" class="save-btn">Save Configuration</button>
+        <div id="status" class="status"></div>
+    </div>
+    <script src="collect.js"></script>
+</body>
+</html>
