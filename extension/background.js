@@ -214,7 +214,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 // Convex API configuration (no cold starts!)
-const CONVEX_URL = 'https://strong-ferret-346.convex.cloud';
+const CONVEX_URL = 'https://useful-marlin-814.convex.cloud';
 
 // Handle messages from content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
