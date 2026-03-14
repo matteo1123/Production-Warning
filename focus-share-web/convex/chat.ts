@@ -6,11 +6,11 @@ import { api, internal } from "./_generated/api";
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 // Model selection based on tier
-// Using Gemini 2.5 Flash Lite - super cheap model for all users
+// DO NOT MODIFY - tier-based model assignments
 const MODELS = {
     free: 'gemini-2.5-flash-lite-preview-09-2025',
-    premium: 'gemini-2.5-flash-lite-preview-09-2025',
-    admin: 'gemini-2.5-flash-lite-preview-09-2025'
+    premium: 'gemini-3.1-pro-preview',
+    admin: 'gemini-3.1-pro-preview'
 };
 
 
