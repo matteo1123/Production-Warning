@@ -1893,35 +1893,100 @@ if (window === window.top) {
         }
 
         function extractAndSendText() {
-            // Very naive approach: get body text, clean up, split into paragraphs/blocks
+            // Comprehensive text extraction that filters out hidden/invisible content
             const skipSelectors = [
-                'nav', 'header', 'footer', 'aside',
-                'script', 'style', 'noscript', 'iframe'
+                // Navigation and UI chrome
+                'nav', 'header', 'footer', 'aside', 'menu', '[role="navigation"]',
+                // Scripts and metadata
+                'script', 'style', 'noscript', 'iframe', 'link', 'meta',
+                // Common UI class patterns
+                '.nav', '.navbar', '.header', '.footer', '.sidebar', '.menu',
+                '.ad', '.ads', '.advertisement', '.cookie-banner', '.toast',
+                // Modals, popups, and overlays (often hidden)
+                '[role="dialog"]', '[role="alertdialog"]', '.modal', '.popup', '.overlay',
+                // Skip common hidden/accessibility elements
+                '[aria-hidden="true"]', '.sr-only', '.visually-hidden',
             ];
 
             const clone = document.body.cloneNode(true);
+            
+            // Remove elements by selector
             skipSelectors.forEach(selector => {
                 try {
                     clone.querySelectorAll(selector).forEach(el => el.remove());
                 } catch (e) { }
             });
 
-            // Try to grab text blocks rather than just one giant string, to better handle chat rooms
-            // Let's grab all div, p, span that have direct text content and are somewhat substantial
-            const textBlocks = [];
-            const walker = document.createTreeWalker(clone, NodeFilter.SHOW_TEXT, null, false);
-            let node;
-            while (node = walker.nextNode()) {
-                const text = node.nodeValue.trim();
-                if (text.length > 20) { // arbitrary length to avoid noise
-                    textBlocks.push(text);
+            // Helper to check if an element is visible
+            function isVisible(el) {
+                // Use native checkVisibility if available (modern browsers)
+                if (typeof el.checkVisibility === 'function') {
+                    return el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
+                }
+                
+                // Fallback: check computed styles
+                try {
+                    const style = window.getComputedStyle(el);
+                    if (style.display === 'none' || 
+                        style.visibility === 'hidden' || 
+                        parseFloat(style.opacity) === 0) {
+                        return false;
+                    }
+                    
+                    // Check if element has dimensions
+                    const rect = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+                    if (rect && (rect.width === 0 || rect.height === 0)) {
+                        return false;
+                    }
+                    
+                    // Check for off-screen elements (common for hidden mobile menus)
+                    if (rect && (rect.top < -1000 || rect.left < -1000)) {
+                        return false;
+                    }
+                    
+                    return true;
+                } catch (e) {
+                    return true; // Assume visible if we can't check
                 }
             }
 
-            // Alternatively, just grabinnerText of main container if available, but for chatrooms, individual messages are divs
-            // So grabbing innerText of all elements that look like message bubbles might be better.
-            // As a general fallback, we'll just chunk the innerText by newlines.
+            // Remove invisible elements by checking computed styles
+            const allElements = clone.querySelectorAll('*');
+            allElements.forEach(el => {
+                if (!isVisible(el)) {
+                    el.remove();
+                }
+            });
+
+            // Get text from the cleaned clone
             let fullText = clone.innerText || clone.textContent || '';
+            
+            // Clean up whitespace
+            fullText = fullText
+                .replace(/[ \t]+/g, ' ')           // Collapse multiple spaces/tabs
+                .replace(/\n[ \t]+/g, '\n')        // Remove leading whitespace on lines
+                .replace(/[ \t]+\n/g, '\n')        // Remove trailing whitespace on lines
+                .replace(/\n{3,}/g, '\n\n')         // Max 2 consecutive newlines
+                .trim();
+            
+            // Remove common UI text patterns
+            const uiPatterns = [
+                /Skip to (main )?content/gi,
+                /Keyboard shortcuts/gi,
+                /Accessibility feedback/gi,
+                /Press (space|enter|escape|arrow keys?)/gi,
+                /Learn more/gi,
+                /Loading\.*/gi,
+                /Show details?/gi,
+                /Hide details?/gi,
+                /More actions?/gi,
+            ];
+            uiPatterns.forEach(pattern => {
+                fullText = fullText.replace(pattern, '');
+            });
+            
+            // Final cleanup and chunking
+            fullText = fullText.replace(/\n{3,}/g, '\n\n').trim();
             let chunks = fullText.split(/\n+/).map(c => c.trim()).filter(c => c.length > 30);
 
             let newChunks = [];

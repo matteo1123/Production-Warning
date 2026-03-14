@@ -404,12 +404,21 @@ async function handleFocusChatRequest(question) {
         const results = await chrome.scripting.executeScript({
           target: { tabId: tab.id },
           func: () => {
-            // Extract text content inline to ensure return value works
+            // Comprehensive text extraction that filters out hidden/invisible content
             const skipSelectors = [
-              'nav', 'header', 'footer', 'aside',
-              'script', 'style', 'noscript', 'iframe',
-              '.nav', '.navbar', '.header', '.footer', '.sidebar',
-              '.ad', '.ads', '.advertisement'
+              // Navigation and UI chrome
+              'nav', 'header', 'footer', 'aside', 'menu', '[role="navigation"]',
+              // Scripts and metadata
+              'script', 'style', 'noscript', 'iframe', 'link', 'meta',
+              // Common UI class patterns
+              '.nav', '.navbar', '.header', '.footer', '.sidebar', '.menu',
+              '.ad', '.ads', '.advertisement', '.cookie-banner', '.toast',
+              // Modals, popups, and overlays (often hidden)
+              '[role="dialog"]', '[role="alertdialog"]', '.modal', '.popup', '.overlay',
+              // Skip common hidden/accessibility elements
+              '[aria-hidden="true"]', '.sr-only', '.visually-hidden',
+              // Skip interactive UI elements that aren't content
+              'button:not([aria-label])', // buttons without labels are usually UI
             ];
 
             const body = document.body;
@@ -418,14 +427,89 @@ async function handleFocusChatRequest(question) {
             }
 
             const clone = body.cloneNode(true);
+            
+            // Remove elements by selector
             skipSelectors.forEach(selector => {
               try {
                 clone.querySelectorAll(selector).forEach(el => el.remove());
               } catch (e) { }
             });
 
+            // Helper to check if an element is visible
+            function isVisible(el) {
+              // Use native checkVisibility if available (modern browsers)
+              if (typeof el.checkVisibility === 'function') {
+                return el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
+              }
+              
+              // Fallback: check computed styles
+              try {
+                const style = window.getComputedStyle(el);
+                if (style.display === 'none' || 
+                    style.visibility === 'hidden' || 
+                    parseFloat(style.opacity) === 0) {
+                  return false;
+                }
+                
+                // Check if element has dimensions
+                const rect = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+                if (rect && (rect.width === 0 || rect.height === 0)) {
+                  return false;
+                }
+                
+                // Check for off-screen elements (common for hidden mobile menus)
+                if (rect && (rect.top < -1000 || rect.left < -1000)) {
+                  return false;
+                }
+                
+                return true;
+              } catch (e) {
+                return true; // Assume visible if we can't check
+              }
+            }
+
+            // Remove invisible elements by checking computed styles
+            const allElements = clone.querySelectorAll('*');
+            allElements.forEach(el => {
+              if (!isVisible(el)) {
+                el.remove();
+              }
+            });
+
+            // Get text from the cleaned clone
             let text = clone.innerText || clone.textContent || '';
-            text = text.replace(/\s+/g, ' ').replace(/\n\s*\n/g, '\n\n').trim();
+            
+            // Clean up whitespace
+            text = text
+              .replace(/[ \t]+/g, ' ')           // Collapse multiple spaces/tabs
+              .replace(/\n[ \t]+/g, '\n')        // Remove leading whitespace on lines
+              .replace(/[ \t]+\n/g, '\n')        // Remove trailing whitespace on lines
+              .replace(/\n{3,}/g, '\n\n')         // Max 2 consecutive newlines
+              .trim();
+            
+            // Remove common UI text patterns
+            const uiPatterns = [
+              /Skip to (main )?content/gi,
+              /Keyboard shortcuts/gi,
+              /Accessibility feedback/gi,
+              /Press (space|enter|escape|arrow keys?)/gi,
+              /Learn more/gi,
+              /Loading\.*/gi,
+              /Show details?/gi,
+              /Hide details?/gi,
+              /More actions?/gi,
+              /Select an item to see/gi,
+              /No items? selected/gi,
+              /Add Note Ask Focus/gi,
+              /Welcome to Ask Focus[\s\S]*?working on\./gi,
+              /CopySendDismiss/gi,
+            ];
+            uiPatterns.forEach(pattern => {
+              text = text.replace(pattern, '');
+            });
+            
+            // Final cleanup
+            text = text.replace(/\n{3,}/g, '\n\n').trim();
 
             // Truncate to ~4000 chars
             if (text.length > 4000) {
@@ -635,11 +719,19 @@ async function extractFocusContext() {
         const results = await chrome.scripting.executeScript({
           target: { tabId: tab.id },
           func: () => {
+            // Comprehensive text extraction that filters out hidden/invisible content
             const skipSelectors = [
-              'nav', 'header', 'footer', 'aside',
-              'script', 'style', 'noscript', 'iframe',
-              '.nav', '.navbar', '.header', '.footer', '.sidebar',
-              '.ad', '.ads', '.advertisement'
+              // Navigation and UI chrome
+              'nav', 'header', 'footer', 'aside', 'menu', '[role="navigation"]',
+              // Scripts and metadata
+              'script', 'style', 'noscript', 'iframe', 'link', 'meta',
+              // Common UI class patterns
+              '.nav', '.navbar', '.header', '.footer', '.sidebar', '.menu',
+              '.ad', '.ads', '.advertisement', '.cookie-banner', '.toast',
+              // Modals, popups, and overlays (often hidden)
+              '[role="dialog"]', '[role="alertdialog"]', '.modal', '.popup', '.overlay',
+              // Skip common hidden/accessibility elements
+              '[aria-hidden="true"]', '.sr-only', '.visually-hidden',
             ];
 
             const body = document.body;
@@ -648,14 +740,89 @@ async function extractFocusContext() {
             }
 
             const clone = body.cloneNode(true);
+            
+            // Remove elements by selector
             skipSelectors.forEach(selector => {
               try {
                 clone.querySelectorAll(selector).forEach(el => el.remove());
               } catch (e) { }
             });
 
+            // Helper to check if an element is visible
+            function isVisible(el) {
+              // Use native checkVisibility if available (modern browsers)
+              if (typeof el.checkVisibility === 'function') {
+                return el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true });
+              }
+              
+              // Fallback: check computed styles
+              try {
+                const style = window.getComputedStyle(el);
+                if (style.display === 'none' || 
+                    style.visibility === 'hidden' || 
+                    parseFloat(style.opacity) === 0) {
+                  return false;
+                }
+                
+                // Check if element has dimensions
+                const rect = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+                if (rect && (rect.width === 0 || rect.height === 0)) {
+                  return false;
+                }
+                
+                // Check for off-screen elements (common for hidden mobile menus)
+                if (rect && (rect.top < -1000 || rect.left < -1000)) {
+                  return false;
+                }
+                
+                return true;
+              } catch (e) {
+                return true; // Assume visible if we can't check
+              }
+            }
+
+            // Remove invisible elements by checking computed styles
+            const allElements = clone.querySelectorAll('*');
+            allElements.forEach(el => {
+              if (!isVisible(el)) {
+                el.remove();
+              }
+            });
+
+            // Get text from the cleaned clone
             let text = clone.innerText || clone.textContent || '';
-            text = text.replace(/\s+/g, ' ').replace(/\n\s*\n/g, '\n\n').trim();
+            
+            // Clean up whitespace
+            text = text
+              .replace(/[ \t]+/g, ' ')           // Collapse multiple spaces/tabs
+              .replace(/\n[ \t]+/g, '\n')        // Remove leading whitespace on lines
+              .replace(/[ \t]+\n/g, '\n')        // Remove trailing whitespace on lines
+              .replace(/\n{3,}/g, '\n\n')         // Max 2 consecutive newlines
+              .trim();
+            
+            // Remove common UI text patterns
+            const uiPatterns = [
+              /Skip to (main )?content/gi,
+              /Keyboard shortcuts/gi,
+              /Accessibility feedback/gi,
+              /Press (space|enter|escape|arrow keys?)/gi,
+              /Learn more/gi,
+              /Loading\.*/gi,
+              /Show details?/gi,
+              /Hide details?/gi,
+              /More actions?/gi,
+              /Select an item to see/gi,
+              /No items? selected/gi,
+              /Add Note Ask Focus/gi,
+              /Welcome to Ask Focus[\s\S]*?working on\./gi,
+              /CopySendDismiss/gi,
+            ];
+            uiPatterns.forEach(pattern => {
+              text = text.replace(pattern, '');
+            });
+            
+            // Final cleanup
+            text = text.replace(/\n{3,}/g, '\n\n').trim();
 
             // Allow more content for copy (8000 chars per page)
             if (text.length > 8000) {
